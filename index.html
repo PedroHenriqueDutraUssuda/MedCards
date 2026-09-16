@@ -446,12 +446,22 @@
 
     function createContent() {
       const tipo = document.getElementById('inputType').value;
+      
       if (tipo === 'lote' && !editandoId) {
         let jsonString = document.getElementById('inputJSON').value.trim();
         if(!jsonString) return alert("Cole o texto gerado pela IA primeiro.");
         try {
-          jsonString = jsonString.replace(/```json/gi, '').replace(/```/g, '').trim();
-          const dados = JSON.parse(jsonString); if(!Array.isArray(dados)) throw new Error("O formato não é uma lista válida.");
+          // --- LIMPEZA DE CHOQUE PARA A IA ---
+          jsonString = jsonString.replace(/```json/gi, '').replace(/```/g, ''); // Tira blocos de código
+          jsonString = jsonString.replace(/[\u201C\u201D]/g, '"'); // Troca aspas curvas por retas (duplas)
+          jsonString = jsonString.replace(/[\u2018\u2019]/g, "'"); // Troca aspas curvas por retas (simples)
+          jsonString = jsonString.replace(/\n/g, " "); // Transforma quebras de linha literais em espaços (SALVA VIDAS)
+          jsonString = jsonString.replace(/\r/g, "");  // Tira resíduos do Windows
+          jsonString = jsonString.replace(/\t/g, " "); // Tira tabs
+          
+          const dados = JSON.parse(jsonString.trim());
+          if(!Array.isArray(dados)) throw new Error("O formato não é uma lista válida [ ... ].");
+          
           let importados = 0;
           dados.forEach((item, index) => {
             const tempId = 'c_' + Date.now() + '_' + index;
@@ -459,7 +469,7 @@
             else if (item.tipo === 'questao' && item.enunciado && item.alternativas && item.comentario) { conteudos.push({ id: tempId, pastaId: pastaAtivaId, tipo: 'questao', enunciado: item.enunciado, alternativas: item.alternativas, correta: parseInt(item.correta) || 0, comentario: item.comentario, imagem: item.imagem || "" }); importados++; }
           });
           salvarDadosGlobais(); closeContentModal(); selectFolder(pastaAtivaId); alert(`Sucesso! ${importados} itens adicionados.`); return;
-        } catch(e) { return alert("Erro ao ler formato: " + e.message); }
+        } catch(e) { return alert("Erro ao ler formato JSON. Peça para a IA gerar novamente garantindo que é um JSON puro e válido. \n\nErro técnico: " + e.message); }
       }
 
       let conteudoObj = editandoId ? conteudos.find(c => c.id === editandoId) : { id: 'c_' + Date.now(), pastaId: pastaAtivaId, tipo: tipo };
