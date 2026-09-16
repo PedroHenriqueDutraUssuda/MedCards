@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <!-- Configurações de Aplicativo Web (PWA) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#020617">
+  <title>MedCards</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    
+    .sidebar-transition { transition: width 0.3s ease-in-out; }
+    .sidebar-collapsed .hide-on-collapse { display: none; }
+    .sidebar-collapsed .center-on-collapse { justify-content: center; padding-left: 0 !important; padding-right: 0 !important; }
+
+    .perspective { perspective: 1000px; }
+    .transform-style-3d { transform-style: preserve-3d; }
+    .backface-hidden { backface-visibility: hidden; }
+    .rotate-y-180 { transform: rotateY(180deg); }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 h-[100dvh] w-screen overflow-hidden flex font-sans selection:bg-indigo-500/30">
+
+  <!-- BARRA LATERAL -->
+  <aside id="sidebar" class="sidebar-transition w-72 bg-slate-900 border-r border-slate-800 flex flex-col shadow-2xl z-30 shrink-0 relative">
+    
+    <button onclick="toggleSidebar()" class="absolute -right-3 top-6 bg-slate-800 border border-slate-700 rounded-full p-1 text-slate-400 hover:text-white hover:bg-slate-700 transition shadow-lg z-40">
+      <svg id="collapseIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+    </button>
+
+    <div class="h-20 flex items-center gap-3 px-6 border-b border-slate-800/80 center-on-collapse">
+      <div class="w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br from-indigo-600 to-cyan-500 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/20">MC</div>
+      <div class="hide-on-collapse whitespace-nowrap">
+        <h1 class="text-lg font-bold tracking-wide text-slate-100">MedCards</h1>
+        <p class="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Residência Médica</p>
+      </div>
+    </div>
+
+    <div class="p-4 border-b border-slate-800/80 center-on-collapse flex flex-col gap-2">
+      <button onclick="showDesempenho()" id="btnDesempenho" class="w-full flex items-center gap-3 p-2 rounded-lg transition-colors bg-indigo-500/10 text-indigo-400 font-medium border border-indigo-500/20 center-on-collapse">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+        <span class="hide-on-collapse">Desempenho</span>
+      </button>
+      
+      <button onclick="showConfig()" id="btnConfig" class="w-full flex items-center gap-3 p-2 rounded-lg transition-colors text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-transparent center-on-collapse">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+        <span class="hide-on-collapse">Backup / Configs</span>
+      </button>
+
+      <button onclick="openFolderModal()" class="w-full flex items-center gap-3 p-2 rounded-lg transition-colors bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium center-on-collapse border border-slate-700 mt-2">
+        <span class="text-lg font-bold shrink-0 w-5 text-center">+</span>
+        <span class="hide-on-collapse">Nova Pasta</span>
+      </button>
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-4 custom-scroll">
+      <h2 class="hide-on-collapse text-[10px] font-bold uppercase text-slate-500 tracking-wider mb-3 px-2">Disciplinas</h2>
+      <div id="folderTreeContainer" class="flex flex-col gap-1"></div>
+    </div>
+  </aside>
+
+  <!-- ÁREA PRINCIPAL -->
+  <main class="flex-1 bg-[#090E17] relative flex flex-col h-full overflow-hidden">
+    
+    <!-- VISÃO 1: DESEMPENHO -->
+    <div id="view-desempenho" class="absolute inset-0 flex flex-col overflow-y-auto z-10">
+      <header class="h-20 border-b border-slate-800/60 px-10 flex items-center shrink-0 bg-slate-900/40 backdrop-blur-md sticky top-0"><h2 class="text-2xl font-bold text-slate-100 tracking-tight">Visão Geral de Desempenho</h2></header>
+      <div class="p-6 md:p-10 max-w-6xl mx-auto w-full flex-1">
+        
+        <div class="flex justify-between items-end mb-8">
+          <div><h3 class="text-2xl md:text-3xl font-bold text-white mb-2">Bom dia, Doutor!</h3><p class="text-slate-400">Vença a curva de esquecimento todos os dias.</p></div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div class="bg-slate-800/40 border border-slate-700/50 p-6 rounded-2xl flex items-center justify-between shadow-xl">
+            <div>
+              <p class="text-xs text-slate-400 uppercase font-semibold tracking-wider mb-1 flex items-center gap-2">
+                Meta Diária (<span id="dashMetaValor">50</span>)
+                <button onclick="alterarMeta()" class="text-indigo-400 hover:text-indigo-300 transition bg-indigo-500/10 p-1 rounded hover:bg-indigo-500/20"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
+              </p>
+              <p class="text-2xl font-bold text-white"><span id="dashRevisadosHoje">0</span> <span class="text-sm text-slate-500 font-normal">itens hoje</span></p>
+            </div>
+            <div class="w-14 h-14 rounded-full border-4 border-slate-700 border-t-cyan-400 border-r-cyan-400 transform rotate-45 flex items-center justify-center relative shrink-0"><span id="dashMetaPercent" class="text-xs font-bold text-cyan-400 -rotate-45">0%</span></div>
+          </div>
+          <div class="bg-slate-800/40 border border-slate-700/50 p-6 rounded-2xl shadow-xl">
+            <p class="text-xs text-slate-400 uppercase font-semibold tracking-wider mb-1">Taxa de Acertos Global</p>
+            <p id="dashTaxaAcertos" class="text-2xl font-bold text-emerald-400">0%</p>
+            <p class="text-xs text-slate-500 mt-1">Acertos: <span id="dashNumAcertos" class="text-emerald-500/70">0</span> | Erros: <span id="dashNumErros" class="text-rose-500/70">0</span></p>
+          </div>
+          <div class="bg-slate-800/40 border border-slate-700/50 p-6 rounded-2xl shadow-xl">
+            <p class="text-xs text-slate-400 uppercase font-semibold tracking-wider mb-1">Tamanho do Acervo</p>
+            <p class="text-2xl font-bold text-indigo-400"><span id="dashTotalCards">0</span> <span class="text-sm text-slate-500 font-normal">cartões totais</span></p>
+            <p class="text-xs text-slate-500 mt-1">Organizados em <span id="dashTotalPastas">0</span> pastas</p>
+          </div>
+        </div>
+
+        <div class="bg-slate-800/40 border border-slate-700/50 p-6 rounded-2xl shadow-xl">
+          <h3 class="text-sm font-semibold text-slate-300 mb-4 uppercase tracking-wider">Cartões Revisados (Últimos 7 dias)</h3>
+          <div class="h-64 w-full"><canvas id="performanceChart"></canvas></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- VISÃO 2: DASHBOARD DA PASTA -->
+    <div id="view-dashboard" class="hidden absolute inset-0 flex-col overflow-y-auto z-10">
+      <header class="h-20 border-b border-slate-800/60 px-10 flex items-center shrink-0 bg-slate-900/40 backdrop-blur-md sticky top-0">
+        <div class="flex items-center gap-3">
+          <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
+          <h2 id="dashFolderTitle" class="text-2xl font-bold text-slate-100 tracking-tight">Nome da Pasta</h2>
+        </div>
+      </header>
+
+      <div class="p-6 md:p-10 max-w-5xl mx-auto w-full flex-1 flex flex-col">
+        <p class="text-slate-400 mb-8 text-lg text-center">Foco total: Resolva apenas o que está pendente para hoje.</p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <button onclick="startStudyMode('questao')" class="group relative bg-slate-800/40 hover:bg-slate-800 border border-slate-700/50 hover:border-indigo-500/50 p-8 rounded-2xl transition-all duration-300 flex flex-col items-center text-center shadow-xl">
+            <div class="w-14 h-14 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-400 mb-4 border border-indigo-500/20 group-hover:scale-110 transition-transform">📝</div>
+            <h3 class="text-xl font-semibold text-slate-200 mb-1">Questões Pendentes</h3>
+            <div id="badgeQuestao" class="mt-4 bg-slate-500/10 text-slate-400 px-4 py-1.5 rounded-full text-sm font-medium border border-slate-500/20"><span id="dashCountQuestoes">0</span> para hoje</div>
+          </button>
+          
+          <button onclick="startStudyMode('flashcard')" class="group relative bg-slate-800/40 hover:bg-slate-800 border border-slate-700/50 hover:border-cyan-500/50 p-8 rounded-2xl transition-all duration-300 flex flex-col items-center text-center shadow-xl">
+            <div class="w-14 h-14 bg-cyan-500/10 rounded-2xl flex items-center justify-center text-cyan-400 mb-4 border border-cyan-500/20 group-hover:scale-110 transition-transform">⚡</div>
+            <h3 class="text-xl font-semibold text-slate-200 mb-1">Flashcards Pendentes</h3>
+            <div id="badgeFlashcard" class="mt-4 bg-slate-500/10 text-slate-400 px-4 py-1.5 rounded-full text-sm font-medium border border-slate-500/20"><span id="dashCountFlashcards">0</span> para hoje</div>
+          </button>
+        </div>
+        
+        <div class="flex justify-center mb-12">
+          <button onclick="openContentModal()" class="flex items-center gap-2 px-6 py-3 bg-slate-800/80 hover:bg-slate-700 text-slate-300 rounded-xl border border-slate-700 hover:text-white transition-colors text-sm font-medium shadow-lg">
+            <span>+</span> Adicionar / Importar Conteúdo
+          </button>
+        </div>
+
+        <div class="border-t border-slate-800/80 pt-8 mt-auto">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+            <h3 class="text-lg font-bold text-white">Gerenciar Conteúdo da Pasta</h3>
+            <div class="flex items-center gap-2">
+              <button onclick="resetarPasta()" class="text-xs font-semibold text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1" title="Modo Véspera de Prova">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                ↻ Resetar Revisões
+              </button>
+              <span class="text-xs font-semibold text-slate-400 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 shrink-0" id="dashManageCount">0 itens</span>
+            </div>
+          </div>
+          <div id="listaConteudoPasta" class="flex flex-col gap-3 pb-8"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VISÃO 3: MOTOR DE ESTUDO ATIVO -->
+    <div id="view-study" class="hidden absolute inset-0 flex-col bg-[#0B1120] z-20 overflow-hidden relative">
+      <header class="h-16 border-b border-slate-800/80 px-6 flex items-center justify-between shrink-0 bg-slate-900/60 backdrop-blur-md">
+        <div class="flex-1"><button onclick="exitStudyMode()" class="text-slate-400 hover:text-white flex items-center gap-2 text-sm font-medium transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Interromper Sessão</button></div>
+        <div class="flex-1 text-center"><span class="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-widest" id="studyTypeHeader">Foco</span></div>
+        <div class="flex-1 flex justify-end"><div class="bg-slate-800 text-slate-300 text-[10px] md:text-xs font-semibold px-3 py-1.5 rounded-full border border-slate-700 shadow-inner">Restam hoje: <span id="studyQueueCount" class="text-white font-bold">0</span></div></div>
+      </header>
+      
+      <div class="flex-1 w-full max-w-4xl mx-auto p-4 md:p-6 overflow-y-auto pb-32" id="studyContentArea"></div>
+      
+      <div id="studyFeedbackBar" class="hidden absolute bottom-0 left-0 w-full h-24 border-t border-slate-800 bg-slate-900/95 backdrop-blur-md flex items-center justify-center gap-2 md:gap-4 px-4 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] z-50">
+        <button onclick="processFeedback('errei')" class="flex-1 max-w-[220px] py-3 md:py-4 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl font-semibold transition text-sm md:text-base flex flex-col items-center leading-tight">
+          <span>🔴 Errei</span><span class="text-[10px] text-rose-400/60 font-normal">Revisar Hoje</span>
+        </button>
+        <button onclick="processFeedback('medio')" class="flex-1 max-w-[220px] py-3 md:py-4 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-xl font-semibold transition text-sm md:text-base flex flex-col items-center leading-tight">
+          <span>🟡 Inseguro</span><span class="text-[10px] text-amber-400/60 font-normal">Revisar em 3 dias</span>
+        </button>
+        <button onclick="processFeedback('facil')" class="flex-1 max-w-[220px] py-3 md:py-4 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl font-semibold transition text-sm md:text-base flex flex-col items-center leading-tight">
+          <span>🟢 Fácil</span><span class="text-[10px] text-emerald-400/60 font-normal">Revisar em 7 dias</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- VISÃO 4: CONFIGURAÇÕES E BACKUP -->
+    <div id="view-config" class="hidden absolute inset-0 flex-col overflow-y-auto z-10">
+      <header class="h-20 border-b border-slate-800/60 px-10 flex items-center shrink-0 bg-slate-900/40 backdrop-blur-md sticky top-0"><h2 class="text-2xl font-bold text-slate-100 tracking-tight">Configurações e Backup</h2></header>
+      
+      <div class="p-6 md:p-10 max-w-4xl mx-auto w-full flex-1">
+        <div class="bg-slate-800/40 border border-slate-700/50 p-6 md:p-8 rounded-2xl shadow-xl mb-8">
+          <div class="flex items-center gap-3 mb-2"><span class="text-2xl">🔒</span><h3 class="text-xl font-bold text-white">O Cofre de Dados</h3></div>
+          <p class="text-slate-400 mb-8 text-sm leading-relaxed">Faça backups regulares para o seu tablet (Google Drive) para nunca perder seu progresso se limpar o histórico do navegador.</p>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <button onclick="exportarBackup()" class="flex flex-col items-center justify-center p-6 bg-slate-900 border border-indigo-500/30 hover:border-indigo-500 hover:bg-indigo-500/10 rounded-xl transition-all group shadow-lg">
+              <span class="text-3xl mb-3 group-hover:-translate-y-1 transition-transform">⬇️</span><span class="font-bold text-slate-200">Exportar Backup</span><span class="text-xs text-slate-500 mt-2 text-center">Salva um arquivo .json com seu acervo.</span>
+            </button>
+            <button onclick="document.getElementById('importFile').click()" class="flex flex-col items-center justify-center p-6 bg-slate-900 border border-emerald-500/30 hover:border-emerald-500 hover:bg-emerald-500/10 rounded-xl transition-all group shadow-lg">
+              <span class="text-3xl mb-3 group-hover:-translate-y-1 transition-transform">⬆️</span><span class="font-bold text-slate-200">Restaurar Backup</span><span class="text-xs text-slate-500 mt-2 text-center">Carrega um arquivo .json e substitui os dados.</span>
+            </button>
+            <input type="file" id="importFile" accept=".json" class="hidden" onchange="importarBackup(event)">
+          </div>
+        </div>
+        
+        <div class="bg-rose-950/30 border border-rose-500/30 p-6 md:p-8 rounded-2xl shadow-xl">
+           <h3 class="text-lg font-bold text-rose-400 mb-2">Zona de Perigo</h3>
+           <p class="text-rose-400/70 mb-6 text-sm">Apagar todos os dados limpará permanentemente seu acervo. Isso não pode ser desfeito.</p>
+           <button onclick="resetarTudo()" class="px-6 py-3 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white font-bold rounded-xl transition-colors text-sm border border-rose-500/50">Apagar Todos os Dados</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- MODAL: NOVA PASTA -->
+  <div id="modalFolder" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+      <h3 class="text-lg font-bold text-white mb-4">Criar Nova Pasta</h3>
+      <div class="mb-4">
+        <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Nome da Pasta</label>
+        <input type="text" id="inputFolderName" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-slate-100 focus:outline-none focus:border-indigo-500" placeholder="Ex: Pediatria">
+      </div>
+      <div class="mb-6">
+        <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Pasta Pai (Opcional)</label>
+        <select id="selectFolderParent" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-slate-100 focus:outline-none focus:border-indigo-500"></select>
+      </div>
+      <div class="flex justify-end gap-3">
+        <button onclick="closeFolderModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm font-medium">Cancelar</button>
+        <button onclick="createFolder()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ADICIONAR / EDITAR CONTEÚDO -->
+  <div id="modalContent" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4 overflow-y-auto py-10">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-2xl shadow-2xl my-auto">
+      <h3 id="modalContentTitle" class="text-lg font-bold text-white mb-4">Adicionar Conteúdo</h3>
+      
+      <div class="mb-4">
+        <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Formato de Inserção</label>
+        <select id="inputType" onchange="toggleContentForm()" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-slate-100 focus:outline-none focus:border-indigo-500 font-semibold disabled:opacity-50">
+          <option value="flashcard">Flashcard Individual (Frente/Verso)</option>
+          <option value="questao">Questão Individual (Múltipla Escolha)</option>
+          <option value="lote">⚡ Importação em Lote por IA (JSON)</option>
+        </select>
+      </div>
+
+      <div id="formImagemContainer" class="mb-4 block">
+        <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">URL da Imagem (Opcional)</label>
+        <input type="text" id="inputImagem" placeholder="https://exemplo.com/foto.png" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-slate-100 focus:outline-none focus:border-indigo-500 text-sm">
+      </div>
+
+      <div id="formFlashcard" class="block space-y-4">
+        <div><label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Frente (Pergunta)</label><textarea id="inputFrente" rows="2" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-slate-100 focus:outline-none focus:border-indigo-500"></textarea></div>
+        <div><label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Verso (Resposta)</label><textarea id="inputVerso" rows="3" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-slate-100 focus:outline-none focus:border-cyan-500"></textarea></div>
+      </div>
+
+      <div id="formQuestao" class="hidden space-y-4">
+        <div><label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Enunciado (Caso Clínico)</label><textarea id="inputEnunciado" rows="3" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-slate-100 focus:outline-none focus:border-indigo-500"></textarea></div>
+        <div class="grid grid-cols-1 gap-2">
+          <label class="block text-xs font-semibold text-slate-400 uppercase">Alternativas</label>
+          <input type="text" id="alt0" placeholder="A)" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-slate-100 focus:outline-none focus:border-indigo-500">
+          <input type="text" id="alt1" placeholder="B)" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-slate-100 focus:outline-none focus:border-indigo-500">
+          <input type="text" id="alt2" placeholder="C)" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-slate-100 focus:outline-none focus:border-indigo-500">
+          <input type="text" id="alt3" placeholder="D)" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-slate-100 focus:outline-none focus:border-indigo-500">
+          <input type="text" id="alt4" placeholder="E)" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-slate-100 focus:outline-none focus:border-indigo-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Alternativa Correta</label>
+          <select id="inputCorreta" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-slate-100 focus:outline-none focus:border-emerald-500">
+            <option value="0">A</option><option value="1">B</option><option value="2">C</option><option value="3">D</option><option value="4">E</option>
+          </select>
+        </div>
+        <div><label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Comentário do Professor (Explicação)</label><textarea id="inputComentario" rows="2" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-slate-100 focus:outline-none focus:border-indigo-500"></textarea></div>
+      </div>
+
+      <div id="formLote" class="hidden space-y-4">
+        <div class="bg-indigo-500/10 border border-indigo-500/30 p-4 rounded-lg">
+          <p class="text-sm text-indigo-200 mb-2 font-medium">Cole o JSON gerado pela IA. Inclua o campo "imagem" vazio se não houver foto.</p>
+        </div>
+        <div>
+          <textarea id="inputJSON" rows="10" placeholder='Ex: [{ "tipo": "flashcard", "imagem": "", "frente": "A", "verso": "B" }]' class="w-full bg-slate-950 font-mono text-sm border border-slate-700 rounded-lg p-4 text-emerald-400 focus:outline-none focus:border-indigo-500"></textarea>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-800">
+        <button onclick="closeContentModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm font-medium">Cancelar</button>
+        <button onclick="createContent()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold shadow-lg shadow-indigo-500/20">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- FUNÇÕES GERAIS E BANCO DE DADOS ---
+    function getToday() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+    function addDays(days) { const d = new Date(); d.setDate(d.getDate() + days); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+    function formatBR(dateStr) { if(!dateStr) return ''; const p = dateStr.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; }
+    function isCardDue(item) { if (!item.proximaRevisao) return true; return item.proximaRevisao <= getToday(); }
+
+    const mockPastas = [ { id: 'p1', nome: 'Clínica Médica', parentId: null }, { id: 'p2', nome: 'Cardiologia', parentId: 'p1' } ];
+    const mockConteudos = [ { id: 'c1', pastaId: 'p2', tipo: 'flashcard', imagem: '', frente: 'Qual o exame padrão-ouro para TEP?', verso: 'Angiotomografia de Tórax.' } ];
+
+    let pastas = JSON.parse(localStorage.getItem('mc_pastas')) || mockPastas;
+    let conteudos = JSON.parse(localStorage.getItem('mc_conteudos')) || mockConteudos;
+    let stats = JSON.parse(localStorage.getItem('mc_stats')) || { totalAcertos: 0, totalErros: 0, revisadosHoje: 0, dataUltimoAcesso: getToday(), metaDiaria: 50, historico: [] };
+
+    if (!stats.metaDiaria) stats.metaDiaria = 50;
+    if (!stats.historico) stats.historico = [{ data: getToday(), acertos: 0, erros: 0 }];
+
+    function verificarDia() {
+      const hoje = getToday();
+      if (stats.dataUltimoAcesso !== hoje) {
+        stats.revisadosHoje = 0; stats.dataUltimoAcesso = hoje; stats.historico.push({ data: hoje, acertos: 0, erros: 0 });
+        if (stats.historico.length > 7) stats.historico.shift(); localStorage.setItem('mc_stats', JSON.stringify(stats));
+      }
+    }
+
+    function salvarDadosGlobais() {
+      localStorage.setItem('mc_pastas', JSON.stringify(pastas)); localStorage.setItem('mc_conteudos', JSON.stringify(conteudos)); localStorage.setItem('mc_stats', JSON.stringify(stats));
+      renderFolders(); if (!document.getElementById('view-desempenho').classList.contains('hidden')) updateDesempenhoStats(); 
+    }
+
+    let pastaAtivaId = null; let sidebarCollapsed = false; let chartInstance = null; let filaEstudo = []; let itemAtual = null; let interfaceRespondida = false; let editandoId = null;
+
+    function resetarPasta() {
+      if(!pastaAtivaId) return;
+      const pastasIds = getIdsSubpastas(pastaAtivaId); const itens = conteudos.filter(c => pastasIds.includes(c.pastaId));
+      if(itens.length === 0) return alert("Não há itens nesta pasta.");
+      if(confirm("MODO VÉSPERA DE PROVA:\nIsso fará com que todas as datas de revisão futuras dos cartões desta pasta sejam apagadas, colocando TODOS de volta na sua fila de Hoje.")) {
+        conteudos.forEach(c => { if (pastasIds.includes(c.pastaId)) c.proximaRevisao = null; });
+        salvarDadosGlobais(); selectFolder(pastaAtivaId); alert("Revisões resetadas!");
+      }
+    }
+
+    function exportarBackup() {
+      const dataToExport = { pastas: pastas, conteudos: conteudos, stats: stats, exportDate: new Date().toISOString() };
+      const jsonString = JSON.stringify(dataToExport, null, 2); const blob = new Blob([jsonString], { type: "application/json" });
+      const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `medcards_backup_${getToday().replace(/-/g, '')}.json`;
+      document.body.appendChild(a); a.click(); setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+    }
+
+    function importarBackup(event) {
+      const file = event.target.files[0]; if (!file) return; const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const importedData = JSON.parse(e.target.result);
+          if(importedData.pastas && importedData.conteudos && importedData.stats) {
+            if(confirm("ATENÇÃO: Restaurar o backup vai APAGAR seu acervo atual. Continuar?")) {
+              pastas = importedData.pastas; conteudos = importedData.conteudos; stats = importedData.stats;
+              salvarDadosGlobais(); alert("Backup restaurado!"); showDesempenho(); 
+            }
+          } else alert("Arquivo inválido.");
+        } catch (err) { alert("Erro ao ler o arquivo."); }
+        event.target.value = '';
+      };
+      reader.readAsText(file);
+    }
+
+    function resetarTudo() {
+      if(confirm("CUIDADO! Você apagará tudo permanentemente. Tem certeza?")) {
+        if(confirm("Última chance: Apagar tudo?")) {
+          pastas = []; conteudos = []; stats = { totalAcertos: 0, totalErros: 0, revisadosHoje: 0, dataUltimoAcesso: getToday(), metaDiaria: 50, historico: [{ data: getToday(), acertos: 0, erros: 0 }] };
+          salvarDadosGlobais(); showDesempenho(); alert("Aplicativo restaurado.");
+        }
+      }
+    }
+
+    function alterarMeta() {
+      const novaMeta = prompt("Qual será sua nova meta diária?", stats.metaDiaria);
+      if (novaMeta !== null) { const valorParsed = parseInt(novaMeta); if (!isNaN(valorParsed) && valorParsed > 0) { stats.metaDiaria = valorParsed; salvarDadosGlobais(); } else alert("Número inválido."); }
+    }
+
+    function renderListaConteudo() {
+      const container = document.getElementById('listaConteudoPasta'); container.innerHTML = '';
+      const itens = conteudos.filter(c => c.pastaId === pastaAtivaId);
+      document.getElementById('dashManageCount').textContent = `${itens.length} itens`;
+      if (itens.length === 0) return container.innerHTML = '<p class="text-sm text-slate-500 py-4 text-center">Nenhum item adicionado diretamente nesta pasta.</p>';
+
+      itens.forEach(item => {
+        const titulo = item.tipo === 'flashcard' ? item.frente : item.enunciado; const icone = item.tipo === 'flashcard' ? '⚡' : '📝';
+        let revisaoText = ''; let revisaoColor = '';
+        if (!item.proximaRevisao) { revisaoText = 'NOVO'; revisaoColor = 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'; } 
+        else if (item.proximaRevisao <= getToday()) { revisaoText = 'HOJE'; revisaoColor = 'text-rose-400 bg-rose-500/10 border-rose-500/20'; } 
+        else { revisaoText = `REV: ${formatBR(item.proximaRevisao)}`; revisaoColor = 'text-slate-400 bg-slate-700/30 border-slate-600/30'; }
+        
+        container.innerHTML += `
+          <div class="bg-slate-800/40 border border-slate-700/60 p-4 rounded-xl flex items-center justify-between gap-4 transition hover:border-slate-500">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border text-slate-400 border-slate-700/50">${icone}</span>
+                <span class="inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${revisaoColor}">${revisaoText}</span>
+                ${item.imagem ? `<span class="inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border text-purple-400 bg-purple-500/10 border-purple-500/20">📷 IMG</span>` : ''}
+              </div>
+              <p class="text-sm text-slate-200 truncate pr-4">${titulo}</p>
+            </div>
+            <div class="flex items-center gap-1 shrink-0">
+              <button onclick="editarConteudo('${item.id}')" class="text-slate-500 hover:text-indigo-400 p-2.5 rounded-lg hover:bg-slate-700/80 transition shadow-sm border border-transparent hover:border-indigo-500/30" title="Editar Item"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
+              <button onclick="deletarConteudo('${item.id}')" class="text-slate-500 hover:text-rose-400 p-2.5 rounded-lg hover:bg-slate-700/80 transition shadow-sm border border-transparent hover:border-rose-500/30" title="Apagar Item"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    function deletarConteudo(id) { if (confirm("Deseja APAGAR este item permanentemente?")) { conteudos = conteudos.filter(c => c.id !== id); salvarDadosGlobais(); selectFolder(pastaAtivaId); } }
+
+    function openFolderModal() {
+      const select = document.getElementById('selectFolderParent'); select.innerHTML = '<option value="">Nenhuma (Pasta Principal)</option>';
+      pastas.forEach(p => { select.innerHTML += `<option value="${p.id}">${p.nome}</option>`; });
+      document.getElementById('inputFolderName').value = ''; document.getElementById('modalFolder').classList.replace('hidden', 'flex');
+    }
+    function closeFolderModal() { document.getElementById('modalFolder').classList.replace('flex', 'hidden'); }
+    function createFolder() {
+      const nome = document.getElementById('inputFolderName').value.trim(); const parentId = document.getElementById('selectFolderParent').value || null;
+      if (!nome) return alert("Digite o nome da pasta!"); pastas.push({ id: 'p_' + Date.now(), nome, parentId }); salvarDadosGlobais(); closeFolderModal();
+    }
+
+    function editarConteudo(id) {
+      const item = conteudos.find(c => c.id === id); if (!item) return; editandoId = id; 
+      document.getElementById('modalContentTitle').textContent = 'Editar Conteúdo';
+      const selectType = document.getElementById('inputType'); selectType.value = item.tipo; selectType.disabled = true; 
+      document.getElementById('inputImagem').value = item.imagem || '';
+      toggleContentForm();
+      if (item.tipo === 'flashcard') { document.getElementById('inputFrente').value = item.frente; document.getElementById('inputVerso').value = item.verso; } 
+      else if (item.tipo === 'questao') { document.getElementById('inputEnunciado').value = item.enunciado; document.getElementById('inputComentario').value = item.comentario; document.getElementById('inputCorreta').value = item.correta; item.alternativas.forEach((alt, i) => { document.getElementById('alt' + i).value = alt; }); }
+      document.getElementById('modalContent').classList.replace('hidden', 'flex');
+    }
+
+    function openContentModal() {
+      editandoId = null; document.getElementById('modalContentTitle').textContent = 'Adicionar Conteúdo';
+      document.getElementById('inputType').disabled = false; document.getElementById('inputType').value = 'flashcard';
+      document.getElementById('inputImagem').value = ''; document.getElementById('inputFrente').value = ''; document.getElementById('inputVerso').value = ''; 
+      document.getElementById('inputEnunciado').value = ''; document.getElementById('inputComentario').value = ''; document.getElementById('inputJSON').value = '';
+      for(let i=0; i<5; i++) document.getElementById('alt'+i).value = '';
+      toggleContentForm(); document.getElementById('modalContent').classList.replace('hidden', 'flex');
+    }
+
+    function closeContentModal() { editandoId = null; document.getElementById('inputType').disabled = false; document.getElementById('modalContent').classList.replace('flex', 'hidden'); }
+
+    function toggleContentForm() {
+      const tipo = document.getElementById('inputType').value;
+      document.getElementById('formFlashcard').classList.add('hidden'); document.getElementById('formQuestao').classList.add('hidden'); 
+      document.getElementById('formLote').classList.add('hidden'); document.getElementById('formImagemContainer').classList.add('hidden');
+      if (tipo === 'flashcard') { document.getElementById('formFlashcard').classList.remove('hidden'); document.getElementById('formImagemContainer').classList.remove('hidden'); }
+      else if (tipo === 'questao') { document.getElementById('formQuestao').classList.remove('hidden'); document.getElementById('formImagemContainer').classList.remove('hidden'); }
+      else if (tipo === 'lote') { document.getElementById('formLote').classList.remove('hidden'); }
+    }
+
+    function createContent() {
+      const tipo = document.getElementById('inputType').value;
+      if (tipo === 'lote' && !editandoId) {
+        let jsonString = document.getElementById('inputJSON').value.trim();
+        if(!jsonString) return alert("Cole o texto gerado pela IA primeiro.");
+        try {
+          jsonString = jsonString.replace(/```json/gi, '').replace(/```/g, '').trim();
+          const dados = JSON.parse(jsonString); if(!Array.isArray(dados)) throw new Error("O formato não é uma lista válida.");
+          let importados = 0;
+          dados.forEach((item, index) => {
+            const tempId = 'c_' + Date.now() + '_' + index;
+            if (item.tipo === 'flashcard' && item.frente && item.verso) { conteudos.push({ id: tempId, pastaId: pastaAtivaId, tipo: 'flashcard', frente: item.frente, verso: item.verso, imagem: item.imagem || "" }); importados++; } 
+            else if (item.tipo === 'questao' && item.enunciado && item.alternativas && item.comentario) { conteudos.push({ id: tempId, pastaId: pastaAtivaId, tipo: 'questao', enunciado: item.enunciado, alternativas: item.alternativas, correta: parseInt(item.correta) || 0, comentario: item.comentario, imagem: item.imagem || "" }); importados++; }
+          });
+          salvarDadosGlobais(); closeContentModal(); selectFolder(pastaAtivaId); alert(`Sucesso! ${importados} itens adicionados.`); return;
+        } catch(e) { return alert("Erro ao ler formato: " + e.message); }
+      }
+
+      let conteudoObj = editandoId ? conteudos.find(c => c.id === editandoId) : { id: 'c_' + Date.now(), pastaId: pastaAtivaId, tipo: tipo };
+      conteudoObj.imagem = document.getElementById('inputImagem').value.trim();
+
+      if (tipo === 'flashcard') {
+        conteudoObj.frente = document.getElementById('inputFrente').value.trim(); conteudoObj.verso = document.getElementById('inputVerso').value.trim();
+        if(!conteudoObj.frente || !conteudoObj.verso) return alert("Preencha frente e verso!");
+      } else if (tipo === 'questao') {
+        conteudoObj.enunciado = document.getElementById('inputEnunciado').value.trim(); conteudoObj.comentario = document.getElementById('inputComentario').value.trim(); conteudoObj.correta = parseInt(document.getElementById('inputCorreta').value);
+        conteudoObj.alternativas = [ document.getElementById('alt0').value.trim(), document.getElementById('alt1').value.trim(), document.getElementById('alt2').value.trim(), document.getElementById('alt3').value.trim(), document.getElementById('alt4').value.trim() ];
+        if(!conteudoObj.enunciado || conteudoObj.alternativas.includes('')) return alert("Preencha todas as alternativas!");
+      }
+
+      if (!editandoId) conteudos.push(conteudoObj); 
+      salvarDadosGlobais(); closeContentModal(); selectFolder(pastaAtivaId); 
+    }
+
+    function toggleSidebar(forceCollapse = false) {
+      const sidebar = document.getElementById('sidebar'); const icon = document.getElementById('collapseIcon');
+      if (forceCollapse) sidebarCollapsed = true; else sidebarCollapsed = !sidebarCollapsed;
+      if (sidebarCollapsed) { sidebar.classList.remove('w-72'); sidebar.classList.add('w-20', 'sidebar-collapsed'); icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />'; } 
+      else { sidebar.classList.remove('w-20', 'sidebar-collapsed'); sidebar.classList.add('w-72'); icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />'; }
+      renderFolders();
+    }
+
+    function getIdsSubpastas(folderId) { let ids = [folderId]; pastas.filter(p => p.parentId === folderId).forEach(f => ids = ids.concat(getIdsSubpastas(f.id))); return ids; }
+
+    function renderFolders() {
+      const container = document.getElementById('folderTreeContainer'); container.innerHTML = '';
+      function buildTree(parentId, depth = 0) {
+        pastas.filter(p => p.parentId === parentId).forEach(folder => {
+          const isSelected = pastaAtivaId === folder.id; const totalItens = conteudos.filter(c => getIdsSubpastas(folder.id).includes(c.pastaId)).length;
+          const paddingLeft = sidebarCollapsed ? 0 : (depth * 16) + 8; const div = document.createElement('div');
+          div.className = `group flex items-center justify-between w-full py-2.5 rounded-lg text-sm cursor-pointer transition-colors mb-1 center-on-collapse ${sidebarCollapsed ? 'justify-center' : 'pr-3'} ${isSelected ? 'bg-indigo-500/10 text-indigo-400 font-medium border border-indigo-500/20' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-transparent'}`;
+          if (!sidebarCollapsed) div.style.paddingLeft = `${paddingLeft}px`; div.onclick = () => selectFolder(folder.id);
+          div.innerHTML = `
+            <div class="flex items-center gap-2 truncate"><span class="shrink-0 ${isSelected ? 'text-indigo-400' : 'text-slate-500'}"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${depth > 0 ? 'M9 5l7 7-7 7' : 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z'}"></path></svg></span><span class="hide-on-collapse truncate">${folder.nome}</span></div>
+            <span class="hide-on-collapse text-[10px] font-bold ${isSelected ? 'bg-indigo-500/20 text-indigo-300' : 'bg-slate-800 text-slate-500 group-hover:bg-slate-700'} px-2 py-0.5 rounded-full">${totalItens}</span>
+          `;
+          container.appendChild(div); if (!sidebarCollapsed || depth === 0) buildTree(folder.id, depth + 1);
+        });
+      }
+      buildTree(null, 0);
+    }
+
+    function resetSidebarButtons() {
+      document.getElementById('btnDesempenho').className = "w-full flex items-center gap-3 p-2 rounded-lg transition-colors text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-transparent center-on-collapse";
+      document.getElementById('btnConfig').className = "w-full flex items-center gap-3 p-2 rounded-lg transition-colors text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-transparent center-on-collapse";
+    }
+
+    function showDesempenho() {
+      pastaAtivaId = null; renderFolders(); updateDesempenhoStats(); resetSidebarButtons();
+      document.getElementById('btnDesempenho').className = "w-full flex items-center gap-3 p-2 rounded-lg transition-colors bg-indigo-500/10 text-indigo-400 font-medium border border-indigo-500/20 center-on-collapse";
+      document.getElementById('view-dashboard').classList.replace('flex', 'hidden'); document.getElementById('view-study').classList.replace('flex', 'hidden');
+      document.getElementById('view-config').classList.replace('flex', 'hidden'); document.getElementById('view-desempenho').classList.replace('hidden', 'flex'); initChart();
+    }
+
+    function showConfig() {
+      pastaAtivaId = null; renderFolders(); resetSidebarButtons();
+      document.getElementById('btnConfig').className = "w-full flex items-center gap-3 p-2 rounded-lg transition-colors bg-indigo-500/10 text-indigo-400 font-medium border border-indigo-500/20 center-on-collapse";
+      document.getElementById('view-dashboard').classList.replace('flex', 'hidden'); document.getElementById('view-study').classList.replace('flex', 'hidden');
+      document.getElementById('view-desempenho').classList.replace('flex', 'hidden'); document.getElementById('view-config').classList.replace('hidden', 'flex');
+    }
+
+    function updateDesempenhoStats() {
+      verificarDia(); document.getElementById('dashMetaValor').textContent = stats.metaDiaria; document.getElementById('dashRevisadosHoje').textContent = stats.revisadosHoje;
+      let percentualMeta = Math.min(100, Math.round((stats.revisadosHoje / stats.metaDiaria) * 100)); document.getElementById('dashMetaPercent').textContent = percentualMeta + '%';
+      let totalRespostas = stats.totalAcertos + stats.totalErros; let taxa = totalRespostas === 0 ? 0 : Math.round((stats.totalAcertos / totalRespostas) * 100);
+      document.getElementById('dashTaxaAcertos').textContent = taxa + '%'; document.getElementById('dashNumAcertos').textContent = stats.totalAcertos; document.getElementById('dashNumErros').textContent = stats.totalErros;
+      document.getElementById('dashTotalPastas').textContent = pastas.length; document.getElementById('dashTotalCards').textContent = conteudos.length;
+    }
+
+    function selectFolder(id) {
+      pastaAtivaId = id; resetSidebarButtons(); renderFolders(); renderListaConteudo(); 
+      const pastasIds = getIdsSubpastas(id);
+      const questoesPendentes = conteudos.filter(c => c.tipo === 'questao' && pastasIds.includes(c.pastaId) && isCardDue(c)).length;
+      const flashcardsPendentes = conteudos.filter(c => c.tipo === 'flashcard' && pastasIds.includes(c.pastaId) && isCardDue(c)).length;
+      document.getElementById('dashFolderTitle').textContent = pastas.find(p => p.id === id).nome;
+      document.getElementById('dashCountQuestoes').textContent = questoesPendentes; document.getElementById('dashCountFlashcards').textContent = flashcardsPendentes;
+
+      const badgeQ = document.getElementById('badgeQuestao'); const badgeF = document.getElementById('badgeFlashcard');
+      if(questoesPendentes > 0) badgeQ.className = "mt-4 bg-indigo-500/10 text-indigo-400 px-4 py-1.5 rounded-full text-sm font-bold border border-indigo-500/30"; 
+      else badgeQ.className = "mt-4 bg-slate-500/10 text-slate-400 px-4 py-1.5 rounded-full text-sm font-medium border border-slate-500/20"; 
+      if(flashcardsPendentes > 0) badgeF.className = "mt-4 bg-cyan-500/10 text-cyan-400 px-4 py-1.5 rounded-full text-sm font-bold border border-cyan-500/30"; 
+      else badgeF.className = "mt-4 bg-slate-500/10 text-slate-400 px-4 py-1.5 rounded-full text-sm font-medium border border-slate-500/20"; 
+
+      document.getElementById('view-desempenho').classList.replace('flex', 'hidden'); document.getElementById('view-study').classList.replace('flex', 'hidden');
+      document.getElementById('view-config').classList.replace('flex', 'hidden'); document.getElementById('view-dashboard').classList.replace('hidden', 'flex');
+    }
+
+    function startStudyMode(tipo) {
+      const pastasIds = getIdsSubpastas(pastaAtivaId); filaEstudo = conteudos.filter(c => c.tipo === tipo && pastasIds.includes(c.pastaId) && isCardDue(c));
+      if(filaEstudo.length === 0) return alert('Parabéns! Não há mais cartões pendentes de revisão desta categoria para hoje.');
+      filaEstudo.sort(() => Math.random() - 0.5); if(!sidebarCollapsed) toggleSidebar(true);
+      document.getElementById('studyTypeHeader').textContent = tipo === 'questao' ? '📝 SIMULADO CLÍNICO' : '⚡ REVISÃO DE FLASHCARDS';
+      document.getElementById('view-dashboard').classList.replace('flex', 'hidden'); document.getElementById('view-study').classList.replace('hidden', 'flex');
+      renderProxItem();
+    }
+
+    function renderProxItem() {
+      const container = document.getElementById('studyContentArea'); const feedbackBar = document.getElementById('studyFeedbackBar');
+      interfaceRespondida = false; feedbackBar.classList.replace('flex', 'hidden'); 
+      if (filaEstudo.length === 0) {
+        document.getElementById('studyQueueCount').textContent = "0";
+        container.innerHTML = `
+          <div class="text-center bg-slate-800/40 p-8 md:p-12 rounded-3xl border border-slate-700/50 shadow-2xl max-w-lg mx-auto mt-10">
+            <div class="text-6xl mb-6">🧠</div><h2 class="text-2xl md:text-3xl font-bold text-white mb-3">Revisão Concluída!</h2>
+            <p class="text-slate-400 mb-8">Todos os cartões agendados para hoje foram processados.</p>
+            <button onclick="exitStudyMode()" class="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-indigo-600/20">Voltar ao Painel</button>
+          </div>
+        `; return;
+      }
+      itemAtual = filaEstudo.shift(); document.getElementById('studyQueueCount').textContent = filaEstudo.length + 1;
+      const imgTag = itemAtual.imagem ? `<img src="${itemAtual.imagem}" class="w-full max-h-48 object-contain rounded-lg mb-6 bg-black/30 p-2" alt="Imagem">` : '';
+
+      if (itemAtual.tipo === 'questao') {
+        let altsHtml = ''; itemAtual.alternativas.forEach((alt, index) => { altsHtml += `<button id="alt-${index}" onclick="responderQuestao(${index})" class="w-full text-left p-4 md:p-5 rounded-xl border border-slate-700/80 bg-slate-800/40 hover:bg-slate-700 hover:border-slate-500 text-slate-300 font-medium transition-all mb-3 text-sm md:text-base">${alt}</button>`; });
+        container.innerHTML = `
+          <div class="bg-slate-900/50 border border-slate-700/50 p-6 md:p-10 rounded-3xl shadow-2xl w-full">
+            ${imgTag}<h3 class="text-base md:text-lg text-slate-100 font-medium leading-relaxed mb-6 md:mb-8">${itemAtual.enunciado}</h3><div id="alternativasContainer">${altsHtml}</div>
+            <div id="comentarioBox" class="hidden mt-6 md:mt-8 p-5 md:p-6 rounded-2xl border border-indigo-500/30 bg-indigo-500/5"><div class="flex items-center gap-2 mb-3"><span class="text-xl">🤖</span><span class="text-xs font-bold uppercase tracking-wider text-indigo-400">Comentário</span></div><p class="text-sm text-slate-300 leading-relaxed">${itemAtual.comentario}</p></div>
+          </div>
+        `;
+      } else {
+        container.innerHTML = `
+          <div class="perspective w-full h-[350px] md:h-[400px] cursor-pointer group" onclick="flipStudyCard()">
+            <div id="studyCardInner" class="relative w-full h-full transform-style-3d transition-transform duration-700 rounded-3xl shadow-2xl">
+              <div class="absolute inset-0 backface-hidden bg-slate-800 border border-slate-700/80 group-hover:border-slate-500 rounded-3xl p-8 md:p-10 flex flex-col justify-center items-center text-center transition-colors">
+                ${imgTag}<p class="text-xl md:text-3xl font-medium text-slate-100 leading-relaxed overflow-y-auto">${itemAtual.frente}</p><div class="absolute bottom-6 flex flex-col items-center opacity-50"><span class="text-2xl animate-bounce mb-1">👆</span><span class="text-xs text-slate-400 font-medium">Toque para revelar</span></div>
+              </div>
+              <div class="absolute inset-0 backface-hidden rotate-y-180 bg-slate-800 border border-indigo-500/50 rounded-3xl p-8 md:p-10 flex flex-col justify-center items-center text-center overflow-y-auto">
+                <span class="text-[10px] md:text-xs font-bold uppercase tracking-wider text-indigo-400 mb-6 border border-indigo-500/20 bg-indigo-500/10 px-3 py-1 rounded-full shrink-0">Resposta</span><p class="text-lg md:text-2xl font-medium text-white leading-relaxed">${itemAtual.verso}</p>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    function responderQuestao(idxSelecionado) {
+      if (interfaceRespondida) return; interfaceRespondida = true; const botoes = document.getElementById('alternativasContainer').querySelectorAll('button');
+      botoes.forEach((btn, idx) => {
+        btn.disabled = true; btn.classList.remove('hover:bg-slate-700', 'bg-slate-800/40', 'border-slate-700/80', 'hover:border-slate-500');
+        if (idx === itemAtual.correta) btn.classList.add('bg-emerald-500/10', 'border-emerald-500/50', 'text-emerald-400');
+        else if (idx === idxSelecionado && idx !== itemAtual.correta) btn.classList.add('bg-rose-500/10', 'border-rose-500/50', 'text-rose-400');
+        else btn.classList.add('opacity-30');
+      });
+      document.getElementById('comentarioBox').classList.remove('hidden'); document.getElementById('studyFeedbackBar').classList.replace('hidden', 'flex');
+    }
+
+    function flipStudyCard() {
+      if (interfaceRespondida) return; interfaceRespondida = true;
+      document.getElementById('studyCardInner').classList.add('rotate-y-180'); document.getElementById('studyFeedbackBar').classList.replace('hidden', 'flex');
+    }
+
+    function processFeedback(nivel) {
+      verificarDia(); stats.revisadosHoje++; 
+      let hojeObj = stats.historico.find(h => h.data === stats.dataUltimoAcesso);
+      if(!hojeObj) { hojeObj = { data: stats.dataUltimoAcesso, acertos: 0, erros: 0 }; stats.historico.push(hojeObj); }
+      if (nivel === 'errei') {
+        stats.totalErros++; hojeObj.erros++; itemAtual.proximaRevisao = getToday(); filaEstudo.splice(Math.floor(filaEstudo.length / 4), 0, itemAtual);
+      } else {
+        stats.totalAcertos++; hojeObj.acertos++;
+        if (nivel === 'medio') itemAtual.proximaRevisao = addDays(3); else if (nivel === 'facil') itemAtual.proximaRevisao = addDays(7); 
+      }
+      const idx = conteudos.findIndex(c => c.id === itemAtual.id); if(idx > -1) conteudos[idx] = itemAtual;
+      salvarDadosGlobais(); renderProxItem(); 
+    }
+
+    function exitStudyMode() { document.getElementById('view-study').classList.replace('flex', 'hidden'); selectFolder(pastaAtivaId); if(sidebarCollapsed) toggleSidebar(false); }
+
+    function initChart() {
+      if(chartInstance) chartInstance.destroy(); const ctx = document.getElementById('performanceChart').getContext('2d');
+      const hist = stats.historico || []; const labelsFormatadas = hist.map(h => h.data.substring(0, 5)); const dataFormatada = hist.map(h => h.acertos + h.erros);
+      while(labelsFormatadas.length < 7) { labelsFormatadas.unshift('-'); dataFormatada.unshift(0); }
+      Chart.defaults.color = '#94a3b8'; Chart.defaults.font.family = 'Inter, sans-serif';
+      chartInstance = new Chart(ctx, {
+        type: 'line', data: { labels: labelsFormatadas, datasets: [{ data: dataFormatada, borderColor: '#818cf8', backgroundColor: 'rgba(129, 140, 248, 0.1)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#0f172a', pointBorderColor: '#818cf8', pointBorderWidth: 2, pointRadius: 4 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { min: 0, suggestedMax: 10, grid: { color: 'rgba(51, 65, 85, 0.5)' }, border: { display: false } }, x: { grid: { display: false }, border: { display: false } } } }
+      });
+    }
+
+    renderFolders(); updateDesempenhoStats(); initChart();
+  </script>
+</body>
+</html>
