@@ -24,6 +24,15 @@
     .transform-style-3d { transform-style: preserve-3d; }
     .backface-hidden { backface-visibility: hidden; }
     .rotate-y-180 { transform: rotateY(180deg); }
+
+    /* Animação de Erro */
+    .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+    @keyframes shake {
+      10%, 90% { transform: translate3d(-2px, 0, 0); }
+      20%, 80% { transform: translate3d(4px, 0, 0); }
+      30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+      40%, 60% { transform: translate3d(6px, 0, 0); }
+    }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 h-[100dvh] w-screen overflow-hidden flex font-sans selection:bg-indigo-500/30">
@@ -45,7 +54,7 @@
 
     <div class="p-4 border-b border-slate-800/80 center-on-collapse flex flex-col gap-2">
       <button onclick="showDesempenho()" id="btnDesempenho" class="w-full flex items-center gap-3 p-2 rounded-lg transition-colors bg-indigo-500/10 text-indigo-400 font-medium border border-indigo-500/20 center-on-collapse">
-        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012-2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
         <span class="hide-on-collapse">Desempenho</span>
       </button>
       
@@ -69,7 +78,7 @@
   <!-- ÁREA PRINCIPAL -->
   <main class="flex-1 bg-[#090E17] relative flex flex-col h-full overflow-hidden">
     
-    <!-- VISÃO 1: DESEMPENHO (SIMPLIFICADA) -->
+    <!-- VISÃO 1: DESEMPENHO -->
     <div id="view-desempenho" class="absolute inset-0 flex flex-col overflow-y-auto z-10">
       <header class="h-20 border-b border-slate-800/60 px-10 flex items-center shrink-0 bg-slate-900/40 backdrop-blur-md sticky top-0"><h2 class="text-2xl font-bold text-slate-100 tracking-tight">Visão Geral de Desempenho</h2></header>
       <div class="p-6 md:p-10 max-w-6xl mx-auto w-full flex-1">
@@ -79,7 +88,6 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <!-- Bloco Meta Diária -->
           <div class="bg-slate-800/40 border border-slate-700/50 p-6 md:p-8 rounded-2xl flex items-center justify-between shadow-xl">
             <div>
               <p class="text-xs text-slate-400 uppercase font-semibold tracking-wider mb-1 flex items-center gap-2">
@@ -89,7 +97,6 @@
               <p class="text-3xl md:text-4xl font-bold text-white"><span id="dashRevisadosHoje">0</span> <span class="text-sm md:text-base text-slate-500 font-normal">itens hoje</span></p>
             </div>
             
-            <!-- Círculo Progressivo Corrigido -->
             <div id="dashMetaCircle" class="w-16 h-16 rounded-full flex items-center justify-center relative shrink-0" style="background: conic-gradient(#22d3ee 0%, #334155 0%);">
               <div class="w-14 h-14 bg-slate-800 rounded-full flex items-center justify-center absolute">
                 <span id="dashMetaPercent" class="text-sm font-bold text-cyan-400">0%</span>
@@ -98,7 +105,6 @@
 
           </div>
           
-          <!-- Bloco Tamanho do Acervo -->
           <div class="bg-slate-800/40 border border-slate-700/50 p-6 md:p-8 rounded-2xl shadow-xl flex flex-col justify-center">
             <p class="text-xs text-slate-400 uppercase font-semibold tracking-wider mb-1">Tamanho do Acervo</p>
             <p class="text-3xl md:text-4xl font-bold text-indigo-400"><span id="dashTotalCards">0</span> <span class="text-sm md:text-base text-slate-500 font-normal">cartões totais</span></p>
@@ -122,12 +128,8 @@
           <h2 id="dashFolderTitle" class="text-xl md:text-2xl font-bold text-slate-100 tracking-tight truncate">Nome da Pasta</h2>
           
           <div class="flex items-center gap-1 ml-2 shrink-0">
-            <button onclick="renomearPastaAtiva()" class="text-slate-500 hover:text-indigo-400 p-1.5 rounded-md hover:bg-slate-800 transition" title="Renomear Pasta">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-            </button>
-            <button onclick="excluirPastaAtiva()" class="text-slate-500 hover:text-rose-400 p-1.5 rounded-md hover:bg-slate-800 transition" title="Excluir Pasta">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-            </button>
+            <button onclick="renomearPastaAtiva()" class="text-slate-500 hover:text-indigo-400 p-1.5 rounded-md hover:bg-slate-800 transition" title="Renomear Pasta"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
+            <button onclick="excluirPastaAtiva()" class="text-slate-500 hover:text-rose-400 p-1.5 rounded-md hover:bg-slate-800 transition" title="Excluir Pasta"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
           </div>
         </div>
       </header>
@@ -171,26 +173,20 @@
       </div>
     </div>
 
-    <!-- VISÃO 3: MOTOR DE ESTUDO ATIVO -->
+    <!-- VISÃO 3: MOTOR DE ESTUDO ATIVO (MODO FOCO ABSOLUTO) -->
     <div id="view-study" class="hidden absolute inset-0 flex-col bg-[#0B1120] z-20 overflow-hidden relative">
-      <header class="h-16 border-b border-slate-800/80 px-6 flex items-center justify-between shrink-0 bg-slate-900/60 backdrop-blur-md">
-        <div class="flex-1"><button onclick="exitStudyMode()" class="text-slate-400 hover:text-white flex items-center gap-2 text-sm font-medium transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Interromper Sessão</button></div>
-        <div class="flex-1 text-center"><span class="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-widest" id="studyTypeHeader">Foco</span></div>
-        <div class="flex-1 flex justify-end"><div class="bg-slate-800 text-slate-300 text-[10px] md:text-xs font-semibold px-3 py-1.5 rounded-full border border-slate-700 shadow-inner">Restam hoje: <span id="studyQueueCount" class="text-white font-bold">0</span></div></div>
-      </header>
       
-      <div class="flex-1 w-full max-w-4xl mx-auto p-4 md:p-6 overflow-y-auto pb-32" id="studyContentArea"></div>
+      <!-- BOTÃO SAIR FLUTUANTE -->
+      <button onclick="exitStudyMode()" class="absolute top-4 right-4 z-[60] px-4 py-2 bg-slate-800/90 hover:bg-slate-700 text-slate-300 border border-slate-600 rounded-full text-sm font-medium backdrop-blur-md flex items-center gap-2 shadow-xl transition-all">
+        Sair <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
       
-      <div id="studyFeedbackBar" class="hidden absolute bottom-0 left-0 w-full h-24 border-t border-slate-800 bg-slate-900/95 backdrop-blur-md flex items-center justify-center gap-2 md:gap-4 px-4 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] z-50">
-        <button onclick="processFeedback('errei')" class="flex-1 max-w-[220px] py-3 md:py-4 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl font-semibold transition text-sm md:text-base flex flex-col items-center leading-tight">
-          <span>🔴 Errei</span><span class="text-[10px] text-rose-400/60 font-normal">Revisar Hoje</span>
-        </button>
-        <button onclick="processFeedback('medio')" class="flex-1 max-w-[220px] py-3 md:py-4 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-xl font-semibold transition text-sm md:text-base flex flex-col items-center leading-tight">
-          <span>🟡 Inseguro</span><span class="text-[10px] text-amber-400/60 font-normal">Revisar em 3 dias</span>
-        </button>
-        <button onclick="processFeedback('facil')" class="flex-1 max-w-[220px] py-3 md:py-4 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl font-semibold transition text-sm md:text-base flex flex-col items-center leading-tight">
-          <span>🟢 Fácil</span><span class="text-[10px] text-emerald-400/60 font-normal">Revisar em 7 dias</span>
-        </button>
+      <!-- ÁREA CENTRAL DO CARTÃO -->
+      <div class="flex-1 w-full max-w-4xl mx-auto p-4 md:p-6 overflow-y-auto pb-36 pt-16 flex flex-col justify-center" id="studyContentArea"></div>
+      
+      <!-- BARRA DE FEEDBACK DINÂMICA -->
+      <div id="studyFeedbackBar" class="hidden absolute bottom-0 left-0 w-full h-auto min-h-[96px] py-4 border-t border-slate-800 bg-slate-900/95 backdrop-blur-md flex-row items-center justify-center gap-2 md:gap-4 px-4 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] z-50">
+        <!-- Botões injetados via JS dependendo do acerto/erro -->
       </div>
     </div>
 
@@ -223,7 +219,7 @@
     </div>
   </main>
 
-  <!-- MODAL: NOVA PASTA -->
+  <!-- MODAL: NOVA PASTA (Omitido visualmente, igual ao anterior) -->
   <div id="modalFolder" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl">
       <h3 class="text-lg font-bold text-white mb-4">Criar Nova Pasta</h3>
@@ -242,7 +238,7 @@
     </div>
   </div>
 
-  <!-- MODAL: ADICIONAR / EDITAR CONTEÚDO -->
+  <!-- MODAL: ADICIONAR CONTEÚDO (Omitido visualmente, igual ao anterior) -->
   <div id="modalContent" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4 overflow-y-auto py-10">
     <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-2xl shadow-2xl my-auto">
       <h3 id="modalContentTitle" class="text-lg font-bold text-white mb-4">Adicionar Conteúdo</h3>
@@ -345,31 +341,16 @@
     }
 
     function renomearPastaAtiva() {
-      if(!pastaAtivaId) return;
-      const pasta = pastas.find(p => p.id === pastaAtivaId);
-      const novoNome = prompt("Digite o novo nome da pasta:", pasta.nome);
-      if(novoNome && novoNome.trim() !== "") {
-        pasta.nome = novoNome.trim();
-        salvarDadosGlobais();
-        selectFolder(pastaAtivaId);
-      }
+      if(!pastaAtivaId) return; const pasta = pastas.find(p => p.id === pastaAtivaId); const novoNome = prompt("Digite o novo nome da pasta:", pasta.nome);
+      if(novoNome && novoNome.trim() !== "") { pasta.nome = novoNome.trim(); salvarDadosGlobais(); selectFolder(pastaAtivaId); }
     }
 
     function excluirPastaAtiva() {
       if(!pastaAtivaId) return;
-      const pastasIds = getIdsSubpastas(pastaAtivaId);
-      const conteudosPasta = conteudos.filter(c => pastasIds.includes(c.pastaId));
+      const pastasIds = getIdsSubpastas(pastaAtivaId); const conteudosPasta = conteudos.filter(c => pastasIds.includes(c.pastaId));
       let msg = "Tem certeza que deseja excluir esta pasta e seu conteúdo?";
-      if(pastasIds.length > 1 || conteudosPasta.length > 0) {
-        msg = `CUIDADO! Esta pasta contém ${pastasIds.length - 1} subpasta(s) e ${conteudosPasta.length} cartão(ões).\n\nTudo será apagado permanentemente. Confirma a exclusão?`;
-      }
-      if(confirm(msg)) {
-        conteudos = conteudos.filter(c => !pastasIds.includes(c.pastaId));
-        pastas = pastas.filter(p => !pastasIds.includes(p.id));
-        pastaAtivaId = null;
-        salvarDadosGlobais();
-        showDesempenho();
-      }
+      if(pastasIds.length > 1 || conteudosPasta.length > 0) msg = `CUIDADO! Esta pasta contém ${pastasIds.length - 1} subpasta(s) e ${conteudosPasta.length} cartão(ões).\n\nTudo será apagado permanentemente. Confirma a exclusão?`;
+      if(confirm(msg)) { conteudos = conteudos.filter(c => !pastasIds.includes(c.pastaId)); pastas = pastas.filter(p => !pastasIds.includes(p.id)); pastaAtivaId = null; salvarDadosGlobais(); showDesempenho(); }
     }
 
     function exportarBackup() {
@@ -426,11 +407,7 @@
         container.innerHTML += `
           <div class="bg-slate-800/40 border border-slate-700/60 p-4 rounded-xl flex items-center justify-between gap-4 transition hover:border-slate-500">
             <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2 mb-2">
-                <span class="inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border text-slate-400 border-slate-700/50">${icone}</span>
-                <span class="inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${revisaoColor}">${revisaoText}</span>
-                ${item.imagem ? `<span class="inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border text-purple-400 bg-purple-500/10 border-purple-500/20">📷 IMG</span>` : ''}
-              </div>
+              <div class="flex items-center gap-2 mb-2"><span class="inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border text-slate-400 border-slate-700/50">${icone}</span><span class="inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${revisaoColor}">${revisaoText}</span>${item.imagem ? `<span class="inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border text-purple-400 bg-purple-500/10 border-purple-500/20">📷 IMG</span>` : ''}</div>
               <p class="text-sm text-slate-200 truncate pr-4">${titulo}</p>
             </div>
             <div class="flex items-center gap-1 shrink-0">
@@ -459,8 +436,7 @@
       const item = conteudos.find(c => c.id === id); if (!item) return; editandoId = id; 
       document.getElementById('modalContentTitle').textContent = 'Editar Conteúdo';
       const selectType = document.getElementById('inputType'); selectType.value = item.tipo; selectType.disabled = true; 
-      document.getElementById('inputImagem').value = item.imagem || '';
-      toggleContentForm();
+      document.getElementById('inputImagem').value = item.imagem || ''; toggleContentForm();
       if (item.tipo === 'flashcard') { document.getElementById('inputFrente').value = item.frente; document.getElementById('inputVerso').value = item.verso; } 
       else if (item.tipo === 'questao') { document.getElementById('inputEnunciado').value = item.enunciado; document.getElementById('inputComentario').value = item.comentario; document.getElementById('inputCorreta').value = item.correta; item.alternativas.forEach((alt, i) => { document.getElementById('alt' + i).value = alt; }); }
       document.getElementById('modalContent').classList.replace('hidden', 'flex');
@@ -493,15 +469,9 @@
         let jsonString = document.getElementById('inputJSON').value.trim();
         if(!jsonString) return alert("Cole o texto gerado pela IA primeiro.");
         try {
-          jsonString = jsonString.replace(/```json/gi, '').replace(/```/g, ''); 
-          jsonString = jsonString.replace(/[\u201C\u201D]/g, '"'); 
-          jsonString = jsonString.replace(/[\u2018\u2019]/g, "'"); 
-          jsonString = jsonString.replace(/\n/g, " "); 
-          jsonString = jsonString.replace(/\r/g, "");  
-          jsonString = jsonString.replace(/\t/g, " "); 
-          
-          const dados = JSON.parse(jsonString.trim());
-          if(!Array.isArray(dados)) throw new Error("O formato não é uma lista válida [ ... ].");
+          jsonString = jsonString.replace(/```json/gi, '').replace(/```/g, ''); jsonString = jsonString.replace(/[\u201C\u201D]/g, '"'); jsonString = jsonString.replace(/[\u2018\u2019]/g, "'"); 
+          jsonString = jsonString.replace(/\n/g, " "); jsonString = jsonString.replace(/\r/g, ""); jsonString = jsonString.replace(/\t/g, " "); 
+          const dados = JSON.parse(jsonString.trim()); if(!Array.isArray(dados)) throw new Error("O formato não é uma lista válida [ ... ].");
           
           let importados = 0;
           dados.forEach((item, index) => {
@@ -525,8 +495,7 @@
         if(!conteudoObj.enunciado || conteudoObj.alternativas.includes('')) return alert("Preencha todas as alternativas!");
       }
 
-      if (!editandoId) conteudos.push(conteudoObj); 
-      salvarDadosGlobais(); closeContentModal(); selectFolder(pastaAtivaId); 
+      if (!editandoId) conteudos.push(conteudoObj); salvarDadosGlobais(); closeContentModal(); selectFolder(pastaAtivaId); 
     }
 
     function toggleSidebar(forceCollapse = false) {
@@ -539,52 +508,24 @@
 
     function getIdsSubpastas(folderId) { let ids = [folderId]; pastas.filter(p => p.parentId === folderId).forEach(f => ids = ids.concat(getIdsSubpastas(f.id))); return ids; }
 
-    function togglePastaExpandida(event, id) {
-      event.stopPropagation();
-      if(pastasFechadas.has(id)) pastasFechadas.delete(id); else pastasFechadas.add(id);
-      renderFolders();
-    }
+    function togglePastaExpandida(event, id) { event.stopPropagation(); if(pastasFechadas.has(id)) pastasFechadas.delete(id); else pastasFechadas.add(id); renderFolders(); }
 
     function renderFolders() {
-      const container = document.getElementById('folderTreeContainer'); 
-      container.innerHTML = '';
-      
+      const container = document.getElementById('folderTreeContainer'); container.innerHTML = '';
       function buildTree(parentId, depth = 0) {
         const children = pastas.filter(p => p.parentId === parentId).sort((a, b) => a.nome.localeCompare(b.nome));
-        
         children.forEach(folder => {
-          const isSelected = pastaAtivaId === folder.id; 
-          const totalItens = conteudos.filter(c => getIdsSubpastas(folder.id).includes(c.pastaId)).length;
-          const paddingLeft = sidebarCollapsed ? 0 : (depth * 16) + 8; 
-          
-          const hasChildren = pastas.some(p => p.parentId === folder.id);
-          const isClosed = pastasFechadas.has(folder.id);
-
+          const isSelected = pastaAtivaId === folder.id; const totalItens = conteudos.filter(c => getIdsSubpastas(folder.id).includes(c.pastaId)).length;
+          const paddingLeft = sidebarCollapsed ? 0 : (depth * 16) + 8; const hasChildren = pastas.some(p => p.parentId === folder.id); const isClosed = pastasFechadas.has(folder.id);
           const div = document.createElement('div');
           div.className = `group flex items-center justify-between w-full py-2 rounded-lg text-sm cursor-pointer transition-colors mb-1 center-on-collapse ${sidebarCollapsed ? 'justify-center' : 'pr-3'} ${isSelected ? 'bg-indigo-500/10 text-indigo-400 font-medium border border-indigo-500/20' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-transparent'}`;
-          if (!sidebarCollapsed) div.style.paddingLeft = `${paddingLeft}px`; 
-          div.onclick = () => selectFolder(folder.id);
-
+          if (!sidebarCollapsed) div.style.paddingLeft = `${paddingLeft}px`; div.onclick = () => selectFolder(folder.id);
           let chevronHtml = '';
-          if(hasChildren && !sidebarCollapsed) {
-            chevronHtml = `<button onclick="togglePastaExpandida(event, '${folder.id}')" class="p-1 text-slate-500 hover:text-slate-300 transition-transform ${isClosed ? '-rotate-90' : ''}"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></button>`;
-          } else if (!sidebarCollapsed) {
-            chevronHtml = `<span class="w-6 h-6 inline-block shrink-0"></span>`; 
-          }
+          if(hasChildren && !sidebarCollapsed) chevronHtml = `<button onclick="togglePastaExpandida(event, '${folder.id}')" class="p-1 text-slate-500 hover:text-slate-300 transition-transform ${isClosed ? '-rotate-90' : ''}"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></button>`;
+          else if (!sidebarCollapsed) chevronHtml = `<span class="w-6 h-6 inline-block shrink-0"></span>`; 
 
-          div.innerHTML = `
-            <div class="flex items-center gap-1 truncate">
-              ${chevronHtml}
-              <span class="shrink-0 ${isSelected ? 'text-indigo-400' : 'text-slate-500'} hide-on-collapse"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${depth > 0 ? 'M9 5l7 7-7 7' : 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z'}"></path></svg></span>
-              <span class="hide-on-collapse truncate ml-1">${folder.nome}</span>
-            </div>
-            <span class="hide-on-collapse text-[10px] font-bold ${isSelected ? 'bg-indigo-500/20 text-indigo-300' : 'bg-slate-800 text-slate-500 group-hover:bg-slate-700'} px-2 py-0.5 rounded-full">${totalItens}</span>
-          `;
-          container.appendChild(div); 
-          
-          if (hasChildren && (!isClosed || sidebarCollapsed)) {
-            buildTree(folder.id, depth + 1);
-          }
+          div.innerHTML = `<div class="flex items-center gap-1 truncate">${chevronHtml}<span class="shrink-0 ${isSelected ? 'text-indigo-400' : 'text-slate-500'} hide-on-collapse"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${depth > 0 ? 'M9 5l7 7-7 7' : 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z'}"></path></svg></span><span class="hide-on-collapse truncate ml-1">${folder.nome}</span></div><span class="hide-on-collapse text-[10px] font-bold ${isSelected ? 'bg-indigo-500/20 text-indigo-300' : 'bg-slate-800 text-slate-500 group-hover:bg-slate-700'} px-2 py-0.5 rounded-full">${totalItens}</span>`;
+          container.appendChild(div); if (hasChildren && (!isClosed || sidebarCollapsed)) buildTree(folder.id, depth + 1);
         });
       }
       buildTree(null, 0);
@@ -612,10 +553,7 @@
     function updateDesempenhoStats() {
       verificarDia(); document.getElementById('dashMetaValor').textContent = stats.metaDiaria; document.getElementById('dashRevisadosHoje').textContent = stats.revisadosHoje;
       let percentualMeta = Math.min(100, Math.round((stats.revisadosHoje / stats.metaDiaria) * 100)); document.getElementById('dashMetaPercent').textContent = percentualMeta + '%';
-      
-      // Atualiza visualmente o círculo progressivo
       document.getElementById('dashMetaCircle').style.background = `conic-gradient(#22d3ee ${percentualMeta}%, #334155 ${percentualMeta}%)`;
-      
       document.getElementById('dashTotalPastas').textContent = pastas.length; document.getElementById('dashTotalCards').textContent = conteudos.length;
     }
 
@@ -641,44 +579,84 @@
       const pastasIds = getIdsSubpastas(pastaAtivaId); filaEstudo = conteudos.filter(c => c.tipo === tipo && pastasIds.includes(c.pastaId) && isCardDue(c));
       if(filaEstudo.length === 0) return alert('Parabéns! Não há mais cartões pendentes de revisão desta categoria para hoje.');
       filaEstudo.sort(() => Math.random() - 0.5); if(!sidebarCollapsed) toggleSidebar(true);
-      document.getElementById('studyTypeHeader').textContent = tipo === 'questao' ? '📝 SIMULADO CLÍNICO' : '⚡ REVISÃO DE FLASHCARDS';
       document.getElementById('view-dashboard').classList.replace('flex', 'hidden'); document.getElementById('view-study').classList.replace('hidden', 'flex');
       renderProxItem();
+    }
+
+    // --- NOVA RENDERIZAÇÃO DE FEEDBACK ---
+    function renderFeedbackBar(tipo, acertouQuestao) {
+      const bar = document.getElementById('studyFeedbackBar');
+      
+      if (tipo === 'questao') {
+        if (acertouQuestao) {
+          bar.innerHTML = `
+            <button onclick="processFeedback('chute')" class="flex-1 max-w-[250px] py-3 md:py-4 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-xl font-semibold transition text-sm md:text-base flex flex-col items-center leading-tight">
+              <span>🟡 Acertei no Chute</span><span class="text-[10px] text-amber-400/60 font-normal">Revisar hoje</span>
+            </button>
+            <button onclick="processFeedback('seguranca')" class="flex-1 max-w-[250px] py-3 md:py-4 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl font-semibold transition text-sm md:text-base flex flex-col items-center leading-tight">
+              <span>🟢 Acertei c/ Segurança</span><span class="text-[10px] text-emerald-400/60 font-normal">Revisar em 7 dias</span>
+            </button>
+          `;
+        } else {
+          bar.innerHTML = `
+            <button onclick="processFeedback('erro')" class="w-full max-w-md py-4 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl font-semibold transition text-sm md:text-base flex flex-col items-center leading-tight">
+              <span>💪 Não desista, vamos para a próxima</span><span class="text-[10px] text-rose-400/60 font-normal mt-1">A questão voltará para a fila hoje</span>
+            </button>
+          `;
+        }
+      } else if (tipo === 'flashcard') {
+        bar.innerHTML = `
+          <button onclick="processFeedback('erro')" class="flex-1 max-w-[200px] py-3 md:py-4 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl font-semibold transition text-sm md:text-base flex flex-col items-center leading-tight">
+            <span>🔴 Errei</span>
+          </button>
+          <button onclick="processFeedback('chute')" class="flex-1 max-w-[200px] py-3 md:py-4 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-xl font-semibold transition text-sm md:text-base flex flex-col items-center leading-tight">
+            <span>🟡 Acertei no Chute</span>
+          </button>
+          <button onclick="processFeedback('seguranca')" class="flex-1 max-w-[200px] py-3 md:py-4 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl font-semibold transition text-sm md:text-base flex flex-col items-center leading-tight">
+            <span>🟢 Acertei c/ Segurança</span>
+          </button>
+        `;
+      }
+      bar.classList.replace('hidden', 'flex');
     }
 
     function renderProxItem() {
       const container = document.getElementById('studyContentArea'); const feedbackBar = document.getElementById('studyFeedbackBar');
       interfaceRespondida = false; feedbackBar.classList.replace('flex', 'hidden'); 
       if (filaEstudo.length === 0) {
-        document.getElementById('studyQueueCount').textContent = "0";
         container.innerHTML = `
           <div class="text-center bg-slate-800/40 p-8 md:p-12 rounded-3xl border border-slate-700/50 shadow-2xl max-w-lg mx-auto mt-10">
-            <div class="text-6xl mb-6">🧠</div><h2 class="text-2xl md:text-3xl font-bold text-white mb-3">Revisão Concluída!</h2>
-            <p class="text-slate-400 mb-8">Todos os cartões agendados para hoje foram processados.</p>
+            <div class="text-6xl mb-6">🧠</div><h2 class="text-2xl md:text-3xl font-bold text-white mb-3">Sessão Concluída!</h2>
+            <p class="text-slate-400 mb-8">Todos os cartões agendados para este ciclo foram processados.</p>
             <button onclick="exitStudyMode()" class="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-indigo-600/20">Voltar ao Painel</button>
           </div>
         `; return;
       }
-      itemAtual = filaEstudo.shift(); document.getElementById('studyQueueCount').textContent = filaEstudo.length + 1;
+      
+      itemAtual = filaEstudo.shift(); 
       const imgTag = itemAtual.imagem ? `<img src="${itemAtual.imagem}" class="w-full max-h-48 object-contain rounded-lg mb-6 bg-black/30 p-2" alt="Imagem">` : '';
 
       if (itemAtual.tipo === 'questao') {
         let altsHtml = ''; itemAtual.alternativas.forEach((alt, index) => { altsHtml += `<button id="alt-${index}" onclick="responderQuestao(${index})" class="w-full text-left p-4 md:p-5 rounded-xl border border-slate-700/80 bg-slate-800/40 hover:bg-slate-700 hover:border-slate-500 text-slate-300 font-medium transition-all mb-3 text-sm md:text-base">${alt}</button>`; });
         container.innerHTML = `
-          <div class="bg-slate-900/50 border border-slate-700/50 p-6 md:p-10 rounded-3xl shadow-2xl w-full">
+          <div id="questaoCardContainer" class="bg-slate-900/50 border border-slate-700/50 p-6 md:p-10 rounded-3xl shadow-2xl w-full transition-all duration-300">
             ${imgTag}<h3 class="text-base md:text-lg text-slate-100 font-medium leading-relaxed mb-6 md:mb-8">${itemAtual.enunciado}</h3><div id="alternativasContainer">${altsHtml}</div>
             <div id="comentarioBox" class="hidden mt-6 md:mt-8 p-5 md:p-6 rounded-2xl border border-indigo-500/30 bg-indigo-500/5"><div class="flex items-center gap-2 mb-3"><span class="text-xl">🤖</span><span class="text-xs font-bold uppercase tracking-wider text-indigo-400">Comentário</span></div><p class="text-sm text-slate-300 leading-relaxed">${itemAtual.comentario}</p></div>
           </div>
         `;
       } else {
         container.innerHTML = `
-          <div class="perspective w-full h-[350px] md:h-[400px] cursor-pointer group" onclick="flipStudyCard()">
+          <div class="perspective w-full h-[400px] md:h-[450px] cursor-pointer group" onclick="flipStudyCard()">
             <div id="studyCardInner" class="relative w-full h-full transform-style-3d transition-transform duration-700 rounded-3xl shadow-2xl">
               <div class="absolute inset-0 backface-hidden bg-slate-800 border border-slate-700/80 group-hover:border-slate-500 rounded-3xl p-8 md:p-10 flex flex-col justify-center items-center text-center transition-colors">
                 ${imgTag}<p class="text-xl md:text-3xl font-medium text-slate-100 leading-relaxed overflow-y-auto">${itemAtual.frente}</p><div class="absolute bottom-6 flex flex-col items-center opacity-50"><span class="text-2xl animate-bounce mb-1">👆</span><span class="text-xs text-slate-400 font-medium">Toque para revelar</span></div>
               </div>
               <div class="absolute inset-0 backface-hidden rotate-y-180 bg-slate-800 border border-indigo-500/50 rounded-3xl p-8 md:p-10 flex flex-col justify-center items-center text-center overflow-y-auto">
-                <span class="text-[10px] md:text-xs font-bold uppercase tracking-wider text-indigo-400 mb-6 border border-indigo-500/20 bg-indigo-500/10 px-3 py-1 rounded-full shrink-0">Resposta</span><p class="text-lg md:text-2xl font-medium text-white leading-relaxed">${itemAtual.verso}</p>
+                <span class="text-[10px] md:text-xs font-bold uppercase tracking-wider text-indigo-400 mb-6 border border-indigo-500/20 bg-indigo-500/10 px-3 py-1 rounded-full shrink-0">Resposta</span>
+                <p class="text-lg md:text-2xl font-medium text-white leading-relaxed mb-6">${itemAtual.verso}</p>
+                <button onclick="event.stopPropagation(); document.getElementById('studyCardInner').classList.remove('rotate-y-180');" class="mt-auto px-4 py-2 bg-slate-700/50 hover:bg-slate-700 rounded-lg text-slate-300 text-sm font-medium border border-slate-600 transition flex items-center gap-2">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg> Ler Pergunta Novamente
+                </button>
               </div>
             </div>
           </div>
@@ -687,31 +665,55 @@
     }
 
     function responderQuestao(idxSelecionado) {
-      if (interfaceRespondida) return; interfaceRespondida = true; const botoes = document.getElementById('alternativasContainer').querySelectorAll('button');
+      if (interfaceRespondida) return; interfaceRespondida = true; 
+      
+      const acertou = (idxSelecionado === itemAtual.correta);
+      const cardContainer = document.getElementById('questaoCardContainer');
+      const botoes = document.getElementById('alternativasContainer').querySelectorAll('button');
+      
       botoes.forEach((btn, idx) => {
         btn.disabled = true; btn.classList.remove('hover:bg-slate-700', 'bg-slate-800/40', 'border-slate-700/80', 'hover:border-slate-500');
         if (idx === itemAtual.correta) btn.classList.add('bg-emerald-500/10', 'border-emerald-500/50', 'text-emerald-400');
-        else if (idx === idxSelecionado && idx !== itemAtual.correta) btn.classList.add('bg-rose-500/10', 'border-rose-500/50', 'text-rose-400');
+        else if (idx === idxSelecionado && !acertou) btn.classList.add('bg-rose-500/10', 'border-rose-500/50', 'text-rose-400');
         else btn.classList.add('opacity-30');
       });
-      document.getElementById('comentarioBox').classList.remove('hidden'); document.getElementById('studyFeedbackBar').classList.replace('hidden', 'flex');
+
+      if (acertou) {
+        cardContainer.classList.add('ring-2', 'ring-emerald-500', 'shadow-[0_0_30px_rgba(16,185,129,0.15)]');
+      } else {
+        cardContainer.classList.add('ring-2', 'ring-rose-500', 'shake', 'shadow-[0_0_30px_rgba(244,63,94,0.15)]');
+      }
+
+      document.getElementById('comentarioBox').classList.remove('hidden'); 
+      renderFeedbackBar('questao', acertou);
     }
 
     function flipStudyCard() {
-      if (interfaceRespondida) return; interfaceRespondida = true;
-      document.getElementById('studyCardInner').classList.add('rotate-y-180'); document.getElementById('studyFeedbackBar').classList.replace('hidden', 'flex');
+      if (!interfaceRespondida) {
+        interfaceRespondida = true;
+        renderFeedbackBar('flashcard', null);
+      }
+      document.getElementById('studyCardInner').classList.add('rotate-y-180'); 
     }
 
-    function processFeedback(nivel) {
+    function processFeedback(acao) {
       verificarDia(); stats.revisadosHoje++; 
       let hojeObj = stats.historico.find(h => h.data === stats.dataUltimoAcesso);
       if(!hojeObj) { hojeObj = { data: stats.dataUltimoAcesso, acertos: 0, erros: 0 }; stats.historico.push(hojeObj); }
-      if (nivel === 'errei') {
-        stats.totalErros++; hojeObj.erros++; itemAtual.proximaRevisao = getToday(); filaEstudo.splice(Math.floor(filaEstudo.length / 4), 0, itemAtual);
-      } else {
-        stats.totalAcertos++; hojeObj.acertos++;
-        if (nivel === 'medio') itemAtual.proximaRevisao = addDays(3); else if (nivel === 'facil') itemAtual.proximaRevisao = addDays(7); 
+      
+      if (acao === 'erro') {
+        stats.totalErros++; hojeObj.erros++; 
+        itemAtual.proximaRevisao = getToday(); 
+        filaEstudo.splice(Math.floor(filaEstudo.length / 2), 0, itemAtual);
+      } else if (acao === 'chute') {
+        stats.totalAcertos++; hojeObj.acertos++; 
+        itemAtual.proximaRevisao = getToday(); 
+        filaEstudo.splice(Math.floor(filaEstudo.length / 2), 0, itemAtual);
+      } else if (acao === 'seguranca') {
+        stats.totalAcertos++; hojeObj.acertos++; 
+        itemAtual.proximaRevisao = addDays(7); 
       }
+      
       const idx = conteudos.findIndex(c => c.id === itemAtual.id); if(idx > -1) conteudos[idx] = itemAtual;
       salvarDadosGlobais(); renderProxItem(); 
     }
@@ -721,13 +723,7 @@
     function initChart() {
       if(chartInstance) chartInstance.destroy(); const ctx = document.getElementById('performanceChart').getContext('2d');
       const hist = stats.historico || []; 
-      
-      // Correção do recorte de data para exibir Dia e Mês
-      const labelsFormatadas = hist.map(h => {
-        const p = h.data.split('-'); 
-        return `${p[2]}/${p[1]}`; 
-      }); 
-      
+      const labelsFormatadas = hist.map(h => { const p = h.data.split('-'); return `${p[2]}/${p[1]}`; }); 
       const dataFormatada = hist.map(h => h.acertos + h.erros);
       while(labelsFormatadas.length < 7) { labelsFormatadas.unshift('-'); dataFormatada.unshift(0); }
       Chart.defaults.color = '#94a3b8'; Chart.defaults.font.family = 'Inter, sans-serif';
