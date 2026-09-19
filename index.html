@@ -2,7 +2,6 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <!-- Configurações de Aplicativo Web (PWA) -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -63,14 +62,14 @@
 
     <div class="flex-1 overflow-y-auto p-4 custom-scroll">
       <h2 class="hide-on-collapse text-[10px] font-bold uppercase text-slate-500 tracking-wider mb-3 px-2">Disciplinas</h2>
-      <div id="folderTreeContainer" class="flex flex-col gap-1"></div>
+      <div id="folderTreeContainer" class="flex flex-col gap-1 w-full"></div>
     </div>
   </aside>
 
   <!-- ÁREA PRINCIPAL -->
   <main class="flex-1 bg-[#090E17] relative flex flex-col h-full overflow-hidden">
     
-    <!-- VISÃO 1: DESEMPENHO -->
+    <!-- VISÃO 1: DESEMPENHO (SIMPLIFICADA) -->
     <div id="view-desempenho" class="absolute inset-0 flex flex-col overflow-y-auto z-10">
       <header class="h-20 border-b border-slate-800/60 px-10 flex items-center shrink-0 bg-slate-900/40 backdrop-blur-md sticky top-0"><h2 class="text-2xl font-bold text-slate-100 tracking-tight">Visão Geral de Desempenho</h2></header>
       <div class="p-6 md:p-10 max-w-6xl mx-auto w-full flex-1">
@@ -79,26 +78,31 @@
           <div><h3 class="text-2xl md:text-3xl font-bold text-white mb-2">Bom dia, Doutor!</h3><p class="text-slate-400">Vença a curva de esquecimento todos os dias.</p></div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div class="bg-slate-800/40 border border-slate-700/50 p-6 rounded-2xl flex items-center justify-between shadow-xl">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <!-- Bloco Meta Diária -->
+          <div class="bg-slate-800/40 border border-slate-700/50 p-6 md:p-8 rounded-2xl flex items-center justify-between shadow-xl">
             <div>
               <p class="text-xs text-slate-400 uppercase font-semibold tracking-wider mb-1 flex items-center gap-2">
                 Meta Diária (<span id="dashMetaValor">50</span>)
                 <button onclick="alterarMeta()" class="text-indigo-400 hover:text-indigo-300 transition bg-indigo-500/10 p-1 rounded hover:bg-indigo-500/20"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
               </p>
-              <p class="text-2xl font-bold text-white"><span id="dashRevisadosHoje">0</span> <span class="text-sm text-slate-500 font-normal">itens hoje</span></p>
+              <p class="text-3xl md:text-4xl font-bold text-white"><span id="dashRevisadosHoje">0</span> <span class="text-sm md:text-base text-slate-500 font-normal">itens hoje</span></p>
             </div>
-            <div class="w-14 h-14 rounded-full border-4 border-slate-700 border-t-cyan-400 border-r-cyan-400 transform rotate-45 flex items-center justify-center relative shrink-0"><span id="dashMetaPercent" class="text-xs font-bold text-cyan-400 -rotate-45">0%</span></div>
+            
+            <!-- Círculo Progressivo Corrigido -->
+            <div id="dashMetaCircle" class="w-16 h-16 rounded-full flex items-center justify-center relative shrink-0" style="background: conic-gradient(#22d3ee 0%, #334155 0%);">
+              <div class="w-14 h-14 bg-slate-800 rounded-full flex items-center justify-center absolute">
+                <span id="dashMetaPercent" class="text-sm font-bold text-cyan-400">0%</span>
+              </div>
+            </div>
+
           </div>
-          <div class="bg-slate-800/40 border border-slate-700/50 p-6 rounded-2xl shadow-xl">
-            <p class="text-xs text-slate-400 uppercase font-semibold tracking-wider mb-1">Taxa de Acertos Global</p>
-            <p id="dashTaxaAcertos" class="text-2xl font-bold text-emerald-400">0%</p>
-            <p class="text-xs text-slate-500 mt-1">Acertos: <span id="dashNumAcertos" class="text-emerald-500/70">0</span> | Erros: <span id="dashNumErros" class="text-rose-500/70">0</span></p>
-          </div>
-          <div class="bg-slate-800/40 border border-slate-700/50 p-6 rounded-2xl shadow-xl">
+          
+          <!-- Bloco Tamanho do Acervo -->
+          <div class="bg-slate-800/40 border border-slate-700/50 p-6 md:p-8 rounded-2xl shadow-xl flex flex-col justify-center">
             <p class="text-xs text-slate-400 uppercase font-semibold tracking-wider mb-1">Tamanho do Acervo</p>
-            <p class="text-2xl font-bold text-indigo-400"><span id="dashTotalCards">0</span> <span class="text-sm text-slate-500 font-normal">cartões totais</span></p>
-            <p class="text-xs text-slate-500 mt-1">Organizados em <span id="dashTotalPastas">0</span> pastas</p>
+            <p class="text-3xl md:text-4xl font-bold text-indigo-400"><span id="dashTotalCards">0</span> <span class="text-sm md:text-base text-slate-500 font-normal">cartões totais</span></p>
+            <p class="text-sm text-slate-500 mt-2">Organizados em <span id="dashTotalPastas" class="font-semibold text-slate-400">0</span> pastas estruturadas</p>
           </div>
         </div>
 
@@ -112,10 +116,19 @@
 
     <!-- VISÃO 2: DASHBOARD DA PASTA -->
     <div id="view-dashboard" class="hidden absolute inset-0 flex-col overflow-y-auto z-10">
-      <header class="h-20 border-b border-slate-800/60 px-10 flex items-center shrink-0 bg-slate-900/40 backdrop-blur-md sticky top-0">
+      <header class="h-20 border-b border-slate-800/60 px-6 md:px-10 flex items-center justify-between shrink-0 bg-slate-900/40 backdrop-blur-md sticky top-0">
         <div class="flex items-center gap-3">
-          <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
-          <h2 id="dashFolderTitle" class="text-2xl font-bold text-slate-100 tracking-tight">Nome da Pasta</h2>
+          <svg class="w-6 h-6 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
+          <h2 id="dashFolderTitle" class="text-xl md:text-2xl font-bold text-slate-100 tracking-tight truncate">Nome da Pasta</h2>
+          
+          <div class="flex items-center gap-1 ml-2 shrink-0">
+            <button onclick="renomearPastaAtiva()" class="text-slate-500 hover:text-indigo-400 p-1.5 rounded-md hover:bg-slate-800 transition" title="Renomear Pasta">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+            </button>
+            <button onclick="excluirPastaAtiva()" class="text-slate-500 hover:text-rose-400 p-1.5 rounded-md hover:bg-slate-800 transition" title="Excluir Pasta">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -319,6 +332,7 @@
     }
 
     let pastaAtivaId = null; let sidebarCollapsed = false; let chartInstance = null; let filaEstudo = []; let itemAtual = null; let interfaceRespondida = false; let editandoId = null;
+    let pastasFechadas = new Set(); 
 
     function resetarPasta() {
       if(!pastaAtivaId) return;
@@ -327,6 +341,34 @@
       if(confirm("MODO VÉSPERA DE PROVA:\nIsso fará com que todas as datas de revisão futuras dos cartões desta pasta sejam apagadas, colocando TODOS de volta na sua fila de Hoje.")) {
         conteudos.forEach(c => { if (pastasIds.includes(c.pastaId)) c.proximaRevisao = null; });
         salvarDadosGlobais(); selectFolder(pastaAtivaId); alert("Revisões resetadas!");
+      }
+    }
+
+    function renomearPastaAtiva() {
+      if(!pastaAtivaId) return;
+      const pasta = pastas.find(p => p.id === pastaAtivaId);
+      const novoNome = prompt("Digite o novo nome da pasta:", pasta.nome);
+      if(novoNome && novoNome.trim() !== "") {
+        pasta.nome = novoNome.trim();
+        salvarDadosGlobais();
+        selectFolder(pastaAtivaId);
+      }
+    }
+
+    function excluirPastaAtiva() {
+      if(!pastaAtivaId) return;
+      const pastasIds = getIdsSubpastas(pastaAtivaId);
+      const conteudosPasta = conteudos.filter(c => pastasIds.includes(c.pastaId));
+      let msg = "Tem certeza que deseja excluir esta pasta e seu conteúdo?";
+      if(pastasIds.length > 1 || conteudosPasta.length > 0) {
+        msg = `CUIDADO! Esta pasta contém ${pastasIds.length - 1} subpasta(s) e ${conteudosPasta.length} cartão(ões).\n\nTudo será apagado permanentemente. Confirma a exclusão?`;
+      }
+      if(confirm(msg)) {
+        conteudos = conteudos.filter(c => !pastasIds.includes(c.pastaId));
+        pastas = pastas.filter(p => !pastasIds.includes(p.id));
+        pastaAtivaId = null;
+        salvarDadosGlobais();
+        showDesempenho();
       }
     }
 
@@ -371,7 +413,7 @@
     function renderListaConteudo() {
       const container = document.getElementById('listaConteudoPasta'); container.innerHTML = '';
       const itens = conteudos.filter(c => c.pastaId === pastaAtivaId);
-      document.getElementById('dashManageCount').textContent = `${itens.length} itens`;
+      document.getElementById('dashManageCount').textContent = `${itens.length} itens diretos nesta pasta`;
       if (itens.length === 0) return container.innerHTML = '<p class="text-sm text-slate-500 py-4 text-center">Nenhum item adicionado diretamente nesta pasta.</p>';
 
       itens.forEach(item => {
@@ -404,7 +446,7 @@
 
     function openFolderModal() {
       const select = document.getElementById('selectFolderParent'); select.innerHTML = '<option value="">Nenhuma (Pasta Principal)</option>';
-      pastas.forEach(p => { select.innerHTML += `<option value="${p.id}">${p.nome}</option>`; });
+      [...pastas].sort((a,b) => a.nome.localeCompare(b.nome)).forEach(p => { select.innerHTML += `<option value="${p.id}">${p.nome}</option>`; });
       document.getElementById('inputFolderName').value = ''; document.getElementById('modalFolder').classList.replace('hidden', 'flex');
     }
     function closeFolderModal() { document.getElementById('modalFolder').classList.replace('flex', 'hidden'); }
@@ -451,13 +493,12 @@
         let jsonString = document.getElementById('inputJSON').value.trim();
         if(!jsonString) return alert("Cole o texto gerado pela IA primeiro.");
         try {
-          // --- LIMPEZA DE CHOQUE PARA A IA ---
-          jsonString = jsonString.replace(/```json/gi, '').replace(/```/g, ''); // Tira blocos de código
-          jsonString = jsonString.replace(/[\u201C\u201D]/g, '"'); // Troca aspas curvas por retas (duplas)
-          jsonString = jsonString.replace(/[\u2018\u2019]/g, "'"); // Troca aspas curvas por retas (simples)
-          jsonString = jsonString.replace(/\n/g, " "); // Transforma quebras de linha literais em espaços (SALVA VIDAS)
-          jsonString = jsonString.replace(/\r/g, "");  // Tira resíduos do Windows
-          jsonString = jsonString.replace(/\t/g, " "); // Tira tabs
+          jsonString = jsonString.replace(/```json/gi, '').replace(/```/g, ''); 
+          jsonString = jsonString.replace(/[\u201C\u201D]/g, '"'); 
+          jsonString = jsonString.replace(/[\u2018\u2019]/g, "'"); 
+          jsonString = jsonString.replace(/\n/g, " "); 
+          jsonString = jsonString.replace(/\r/g, "");  
+          jsonString = jsonString.replace(/\t/g, " "); 
           
           const dados = JSON.parse(jsonString.trim());
           if(!Array.isArray(dados)) throw new Error("O formato não é uma lista válida [ ... ].");
@@ -498,19 +539,52 @@
 
     function getIdsSubpastas(folderId) { let ids = [folderId]; pastas.filter(p => p.parentId === folderId).forEach(f => ids = ids.concat(getIdsSubpastas(f.id))); return ids; }
 
+    function togglePastaExpandida(event, id) {
+      event.stopPropagation();
+      if(pastasFechadas.has(id)) pastasFechadas.delete(id); else pastasFechadas.add(id);
+      renderFolders();
+    }
+
     function renderFolders() {
-      const container = document.getElementById('folderTreeContainer'); container.innerHTML = '';
+      const container = document.getElementById('folderTreeContainer'); 
+      container.innerHTML = '';
+      
       function buildTree(parentId, depth = 0) {
-        pastas.filter(p => p.parentId === parentId).forEach(folder => {
-          const isSelected = pastaAtivaId === folder.id; const totalItens = conteudos.filter(c => getIdsSubpastas(folder.id).includes(c.pastaId)).length;
-          const paddingLeft = sidebarCollapsed ? 0 : (depth * 16) + 8; const div = document.createElement('div');
-          div.className = `group flex items-center justify-between w-full py-2.5 rounded-lg text-sm cursor-pointer transition-colors mb-1 center-on-collapse ${sidebarCollapsed ? 'justify-center' : 'pr-3'} ${isSelected ? 'bg-indigo-500/10 text-indigo-400 font-medium border border-indigo-500/20' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-transparent'}`;
-          if (!sidebarCollapsed) div.style.paddingLeft = `${paddingLeft}px`; div.onclick = () => selectFolder(folder.id);
+        const children = pastas.filter(p => p.parentId === parentId).sort((a, b) => a.nome.localeCompare(b.nome));
+        
+        children.forEach(folder => {
+          const isSelected = pastaAtivaId === folder.id; 
+          const totalItens = conteudos.filter(c => getIdsSubpastas(folder.id).includes(c.pastaId)).length;
+          const paddingLeft = sidebarCollapsed ? 0 : (depth * 16) + 8; 
+          
+          const hasChildren = pastas.some(p => p.parentId === folder.id);
+          const isClosed = pastasFechadas.has(folder.id);
+
+          const div = document.createElement('div');
+          div.className = `group flex items-center justify-between w-full py-2 rounded-lg text-sm cursor-pointer transition-colors mb-1 center-on-collapse ${sidebarCollapsed ? 'justify-center' : 'pr-3'} ${isSelected ? 'bg-indigo-500/10 text-indigo-400 font-medium border border-indigo-500/20' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-transparent'}`;
+          if (!sidebarCollapsed) div.style.paddingLeft = `${paddingLeft}px`; 
+          div.onclick = () => selectFolder(folder.id);
+
+          let chevronHtml = '';
+          if(hasChildren && !sidebarCollapsed) {
+            chevronHtml = `<button onclick="togglePastaExpandida(event, '${folder.id}')" class="p-1 text-slate-500 hover:text-slate-300 transition-transform ${isClosed ? '-rotate-90' : ''}"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></button>`;
+          } else if (!sidebarCollapsed) {
+            chevronHtml = `<span class="w-6 h-6 inline-block shrink-0"></span>`; 
+          }
+
           div.innerHTML = `
-            <div class="flex items-center gap-2 truncate"><span class="shrink-0 ${isSelected ? 'text-indigo-400' : 'text-slate-500'}"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${depth > 0 ? 'M9 5l7 7-7 7' : 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z'}"></path></svg></span><span class="hide-on-collapse truncate">${folder.nome}</span></div>
+            <div class="flex items-center gap-1 truncate">
+              ${chevronHtml}
+              <span class="shrink-0 ${isSelected ? 'text-indigo-400' : 'text-slate-500'} hide-on-collapse"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${depth > 0 ? 'M9 5l7 7-7 7' : 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z'}"></path></svg></span>
+              <span class="hide-on-collapse truncate ml-1">${folder.nome}</span>
+            </div>
             <span class="hide-on-collapse text-[10px] font-bold ${isSelected ? 'bg-indigo-500/20 text-indigo-300' : 'bg-slate-800 text-slate-500 group-hover:bg-slate-700'} px-2 py-0.5 rounded-full">${totalItens}</span>
           `;
-          container.appendChild(div); if (!sidebarCollapsed || depth === 0) buildTree(folder.id, depth + 1);
+          container.appendChild(div); 
+          
+          if (hasChildren && (!isClosed || sidebarCollapsed)) {
+            buildTree(folder.id, depth + 1);
+          }
         });
       }
       buildTree(null, 0);
@@ -538,8 +612,10 @@
     function updateDesempenhoStats() {
       verificarDia(); document.getElementById('dashMetaValor').textContent = stats.metaDiaria; document.getElementById('dashRevisadosHoje').textContent = stats.revisadosHoje;
       let percentualMeta = Math.min(100, Math.round((stats.revisadosHoje / stats.metaDiaria) * 100)); document.getElementById('dashMetaPercent').textContent = percentualMeta + '%';
-      let totalRespostas = stats.totalAcertos + stats.totalErros; let taxa = totalRespostas === 0 ? 0 : Math.round((stats.totalAcertos / totalRespostas) * 100);
-      document.getElementById('dashTaxaAcertos').textContent = taxa + '%'; document.getElementById('dashNumAcertos').textContent = stats.totalAcertos; document.getElementById('dashNumErros').textContent = stats.totalErros;
+      
+      // Atualiza visualmente o círculo progressivo
+      document.getElementById('dashMetaCircle').style.background = `conic-gradient(#22d3ee ${percentualMeta}%, #334155 ${percentualMeta}%)`;
+      
       document.getElementById('dashTotalPastas').textContent = pastas.length; document.getElementById('dashTotalCards').textContent = conteudos.length;
     }
 
@@ -644,7 +720,15 @@
 
     function initChart() {
       if(chartInstance) chartInstance.destroy(); const ctx = document.getElementById('performanceChart').getContext('2d');
-      const hist = stats.historico || []; const labelsFormatadas = hist.map(h => h.data.substring(0, 5)); const dataFormatada = hist.map(h => h.acertos + h.erros);
+      const hist = stats.historico || []; 
+      
+      // Correção do recorte de data para exibir Dia e Mês
+      const labelsFormatadas = hist.map(h => {
+        const p = h.data.split('-'); 
+        return `${p[2]}/${p[1]}`; 
+      }); 
+      
+      const dataFormatada = hist.map(h => h.acertos + h.erros);
       while(labelsFormatadas.length < 7) { labelsFormatadas.unshift('-'); dataFormatada.unshift(0); }
       Chart.defaults.color = '#94a3b8'; Chart.defaults.font.family = 'Inter, sans-serif';
       chartInstance = new Chart(ctx, {
