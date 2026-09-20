@@ -9,13 +9,17 @@
   <title>MedCards</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
     ::-webkit-scrollbar-thumb:hover { background: #475569; }
     
+    /* Scroll customizado e invisível pro Heatmap */
+    .custom-scroll-x::-webkit-scrollbar { height: 4px; }
+    .custom-scroll-x::-webkit-scrollbar-track { background: transparent; }
+    .custom-scroll-x::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+
     .sidebar-transition { transition: width 0.3s ease-in-out; }
     .sidebar-collapsed .hide-on-collapse { display: none; }
     .sidebar-collapsed .center-on-collapse { justify-content: center; padding-left: 0 !important; padding-right: 0 !important; }
@@ -25,7 +29,6 @@
     .backface-hidden { backface-visibility: hidden; }
     .rotate-y-180 { transform: rotateY(180deg); }
 
-    /* Animação de Erro */
     .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
     @keyframes shake {
       10%, 90% { transform: translate3d(-2px, 0, 0); }
@@ -88,7 +91,6 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <!-- Bloco Meta Diária -->
           <div class="bg-slate-800/40 border border-slate-700/50 p-6 md:p-8 rounded-2xl flex items-center justify-between shadow-xl">
             <div>
               <p class="text-xs text-slate-400 uppercase font-semibold tracking-wider mb-1 flex items-center gap-2">
@@ -98,16 +100,13 @@
               <p class="text-3xl md:text-4xl font-bold text-white"><span id="dashRevisadosHoje">0</span> <span class="text-sm md:text-base text-slate-500 font-normal">itens hoje</span></p>
             </div>
             
-            <!-- Círculo Progressivo -->
             <div id="dashMetaCircle" class="w-16 h-16 rounded-full flex items-center justify-center relative shrink-0" style="background: conic-gradient(#22d3ee 0%, #334155 0%);">
               <div class="w-14 h-14 bg-slate-800 rounded-full flex items-center justify-center absolute">
                 <span id="dashMetaPercent" class="text-sm font-bold text-cyan-400">0%</span>
               </div>
             </div>
-
           </div>
           
-          <!-- Bloco Tamanho do Acervo -->
           <div class="bg-slate-800/40 border border-slate-700/50 p-6 md:p-8 rounded-2xl shadow-xl flex flex-col justify-center">
             <p class="text-xs text-slate-400 uppercase font-semibold tracking-wider mb-1">Tamanho do Acervo</p>
             <p class="text-3xl md:text-4xl font-bold text-indigo-400"><span id="dashTotalCards">0</span> <span class="text-sm md:text-base text-slate-500 font-normal">cartões totais</span></p>
@@ -115,9 +114,23 @@
           </div>
         </div>
 
-        <div class="bg-slate-800/40 border border-slate-700/50 p-6 rounded-2xl shadow-xl">
-          <h3 class="text-sm font-semibold text-slate-300 mb-4 uppercase tracking-wider">Cartões Revisados (Últimos 7 dias)</h3>
-          <div class="h-64 w-full"><canvas id="performanceChart"></canvas></div>
+        <!-- NOVO: MAPA DE CALOR (HEATMAP) -->
+        <div class="bg-slate-800/40 border border-slate-700/50 p-6 rounded-2xl shadow-xl overflow-hidden">
+          <div class="flex justify-between items-end mb-4">
+            <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider">Histórico de Estudo (Últimos 3 Meses)</h3>
+          </div>
+          <!-- Container do Gráfico CSS -->
+          <div id="heatmapContainer" class="w-full flex justify-end"></div>
+          
+          <div class="mt-4 flex items-center justify-end gap-2 text-[10px] font-medium text-slate-500 uppercase">
+            <span>Menos</span>
+            <div class="w-3 h-3 rounded-[3px] bg-slate-800 border border-slate-700/50"></div>
+            <div class="w-3 h-3 rounded-[3px] bg-emerald-900/60"></div>
+            <div class="w-3 h-3 rounded-[3px] bg-emerald-700/80"></div>
+            <div class="w-3 h-3 rounded-[3px] bg-emerald-500"></div>
+            <div class="w-3 h-3 rounded-[3px] bg-emerald-400 shadow-[0_0_5px_rgba(52,211,153,0.5)]"></div>
+            <span>Mais</span>
+          </div>
         </div>
 
       </div>
@@ -126,13 +139,21 @@
     <!-- VISÃO 2: DASHBOARD DA PASTA -->
     <div id="view-dashboard" class="hidden absolute inset-0 flex-col overflow-y-auto z-10">
       <header class="h-20 border-b border-slate-800/60 px-6 md:px-10 flex items-center justify-between shrink-0 bg-slate-900/40 backdrop-blur-md sticky top-0">
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3 min-w-0">
           <svg class="w-6 h-6 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
           <h2 id="dashFolderTitle" class="text-xl md:text-2xl font-bold text-slate-100 tracking-tight truncate">Nome da Pasta</h2>
           
-          <div class="flex items-center gap-1 ml-2 shrink-0">
-            <button onclick="renomearPastaAtiva()" class="text-slate-500 hover:text-indigo-400 p-1.5 rounded-md hover:bg-slate-800 transition" title="Renomear Pasta"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
-            <button onclick="excluirPastaAtiva()" class="text-slate-500 hover:text-rose-400 p-1.5 rounded-md hover:bg-slate-800 transition" title="Excluir Pasta"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+          <!-- BOTÕES DE GESTÃO: RENOMEAR, MOVER E EXCLUIR -->
+          <div class="flex items-center gap-1 ml-2 shrink-0 bg-slate-800/50 border border-slate-700/50 rounded-lg p-1">
+            <button onclick="renomearPastaAtiva()" class="text-slate-400 hover:text-indigo-400 p-1.5 rounded-md hover:bg-slate-700 transition" title="Renomear">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+            </button>
+            <button onclick="abrirModalMover()" class="text-slate-400 hover:text-cyan-400 p-1.5 rounded-md hover:bg-slate-700 transition" title="Mover Pasta">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+            </button>
+            <button onclick="excluirPastaAtiva()" class="text-slate-400 hover:text-rose-400 p-1.5 rounded-md hover:bg-slate-700 transition" title="Excluir">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            </button>
           </div>
         </div>
       </header>
@@ -178,19 +199,13 @@
 
     <!-- VISÃO 3: MOTOR DE ESTUDO ATIVO (MODO FOCO ABSOLUTO) -->
     <div id="view-study" class="hidden absolute inset-0 flex-col bg-[#0B1120] z-20 overflow-hidden relative">
-      
-      <!-- BOTÃO SAIR FLUTUANTE -->
       <button onclick="exitStudyMode()" class="absolute top-4 right-4 z-[60] px-4 py-2 bg-slate-800/90 hover:bg-slate-700 text-slate-300 border border-slate-600 rounded-full text-sm font-medium backdrop-blur-md flex items-center gap-2 shadow-xl transition-all">
         Sair <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
       </button>
       
-      <!-- ÁREA CENTRAL DO CARTÃO -->
       <div class="flex-1 w-full max-w-4xl mx-auto p-4 md:p-6 overflow-y-auto pt-16 flex flex-col" id="studyContentArea"></div>
       
-      <!-- BARRA DE FEEDBACK DINÂMICA -->
-      <div id="studyFeedbackBar" class="hidden absolute bottom-0 left-0 w-full h-auto min-h-[96px] py-4 border-t border-slate-800 bg-slate-900/95 backdrop-blur-md flex-row items-center justify-center gap-2 md:gap-4 px-4 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] z-50">
-        <!-- Botões injetados via JS -->
-      </div>
+      <div id="studyFeedbackBar" class="hidden absolute bottom-0 left-0 w-full h-auto min-h-[96px] py-4 border-t border-slate-800 bg-slate-900/95 backdrop-blur-md flex-row items-center justify-center gap-2 md:gap-4 px-4 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] z-50"></div>
     </div>
 
     <!-- VISÃO 4: CONFIGURAÇÕES E BACKUP -->
@@ -237,6 +252,22 @@
       <div class="flex justify-end gap-3">
         <button onclick="closeFolderModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm font-medium">Cancelar</button>
         <button onclick="createFolder()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: MOVER PASTA (NOVO) -->
+  <div id="modalMover" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+      <h3 class="text-lg font-bold text-white mb-4">Mover Pasta</h3>
+      <p class="text-sm text-slate-400 mb-4">Selecione o novo local para esta pasta. Ela será colocada dentro do local escolhido.</p>
+      <div class="mb-6">
+        <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Novo Destino</label>
+        <select id="selectMoveFolderParent" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-slate-100 focus:outline-none focus:border-indigo-500"></select>
+      </div>
+      <div class="flex justify-end gap-3">
+        <button onclick="fecharModalMover()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm font-medium">Cancelar</button>
+        <button onclick="moverPasta()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold">Confirmar</button>
       </div>
     </div>
   </div>
@@ -321,7 +352,7 @@
       const hoje = getToday();
       if (stats.dataUltimoAcesso !== hoje) {
         stats.revisadosHoje = 0; stats.dataUltimoAcesso = hoje; stats.historico.push({ data: hoje, acertos: 0, erros: 0 });
-        if (stats.historico.length > 7) stats.historico.shift(); localStorage.setItem('mc_stats', JSON.stringify(stats));
+        if (stats.historico.length > 90) stats.historico.shift(); localStorage.setItem('mc_stats', JSON.stringify(stats));
       }
     }
 
@@ -354,6 +385,35 @@
       let msg = "Tem certeza que deseja excluir esta pasta e seu conteúdo?";
       if(pastasIds.length > 1 || conteudosPasta.length > 0) msg = `CUIDADO! Esta pasta contém ${pastasIds.length - 1} subpasta(s) e ${conteudosPasta.length} cartão(ões).\n\nTudo será apagado permanentemente. Confirma a exclusão?`;
       if(confirm(msg)) { conteudos = conteudos.filter(c => !pastasIds.includes(c.pastaId)); pastas = pastas.filter(p => !pastasIds.includes(p.id)); pastaAtivaId = null; salvarDadosGlobais(); showDesempenho(); }
+    }
+
+    /* NOVA FUNÇÃO: MOVER PASTA */
+    function abrirModalMover() {
+      if(!pastaAtivaId) return;
+      const select = document.getElementById('selectMoveFolderParent');
+      select.innerHTML = '<option value="">Raiz (Pasta Principal)</option>';
+      const proibidos = getIdsSubpastas(pastaAtivaId); // Evita colocar a pasta dentro dela mesma
+      
+      [...pastas].sort((a,b) => a.nome.localeCompare(b.nome)).forEach(p => {
+        if(!proibidos.includes(p.id)) {
+          select.innerHTML += `<option value="${p.id}">${p.nome}</option>`;
+        }
+      });
+      document.getElementById('modalMover').classList.replace('hidden', 'flex');
+    }
+
+    function fecharModalMover() {
+      document.getElementById('modalMover').classList.replace('flex', 'hidden');
+    }
+
+    function moverPasta() {
+      if(!pastaAtivaId) return;
+      const novoParentId = document.getElementById('selectMoveFolderParent').value || null;
+      const pasta = pastas.find(p => p.id === pastaAtivaId);
+      pasta.parentId = novoParentId;
+      salvarDadosGlobais();
+      fecharModalMover();
+      selectFolder(pastaAtivaId);
     }
 
     function exportarBackup() {
@@ -543,7 +603,7 @@
       pastaAtivaId = null; renderFolders(); updateDesempenhoStats(); resetSidebarButtons();
       document.getElementById('btnDesempenho').className = "w-full flex items-center gap-3 p-2 rounded-lg transition-colors bg-indigo-500/10 text-indigo-400 font-medium border border-indigo-500/20 center-on-collapse";
       document.getElementById('view-dashboard').classList.replace('flex', 'hidden'); document.getElementById('view-study').classList.replace('flex', 'hidden');
-      document.getElementById('view-config').classList.replace('flex', 'hidden'); document.getElementById('view-desempenho').classList.replace('hidden', 'flex'); initChart();
+      document.getElementById('view-config').classList.replace('flex', 'hidden'); document.getElementById('view-desempenho').classList.replace('hidden', 'flex'); renderHeatmap();
     }
 
     function showConfig() {
@@ -644,7 +704,6 @@
               <div id="comentarioBox" class="hidden mt-6 md:mt-8 p-5 md:p-6 rounded-2xl border border-indigo-500/30 bg-indigo-500/5"><div class="flex items-center gap-2 mb-3"><span class="text-xl">🤖</span><span class="text-xs font-bold uppercase tracking-wider text-indigo-400">Comentário</span></div><p class="text-sm text-slate-300 leading-relaxed">${itemAtual.comentario}</p></div>
             </div>
           </div>
-          <!-- BLOCO INVISÍVEL PARA BLINDAR A ROLAGEM -->
           <div class="h-36 w-full shrink-0 pointer-events-none"></div>
         `;
       } else {
@@ -671,7 +730,6 @@
               </div>
             </div>
           </div>
-          <!-- BLOCO INVISÍVEL PARA BLINDAR A ROLAGEM -->
           <div class="h-36 w-full shrink-0 pointer-events-none"></div>
         `;
       }
@@ -733,20 +791,36 @@
       if(sidebarCollapsed) toggleSidebar(false); 
     }
 
-    function initChart() {
-      if(chartInstance) chartInstance.destroy(); const ctx = document.getElementById('performanceChart').getContext('2d');
-      const hist = stats.historico || []; 
-      const labelsFormatadas = hist.map(h => { const p = h.data.split('-'); return `${p[2]}/${p[1]}`; }); 
-      const dataFormatada = hist.map(h => h.acertos + h.erros);
-      while(labelsFormatadas.length < 7) { labelsFormatadas.unshift('-'); dataFormatada.unshift(0); }
-      Chart.defaults.color = '#94a3b8'; Chart.defaults.font.family = 'Inter, sans-serif';
-      chartInstance = new Chart(ctx, {
-        type: 'line', data: { labels: labelsFormatadas, datasets: [{ data: dataFormatada, borderColor: '#818cf8', backgroundColor: 'rgba(129, 140, 248, 0.1)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#0f172a', pointBorderColor: '#818cf8', pointBorderWidth: 2, pointRadius: 4 }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { min: 0, suggestedMax: 10, grid: { color: 'rgba(51, 65, 85, 0.5)' }, border: { display: false } }, x: { grid: { display: false }, border: { display: false } } } }
-      });
+    /* NOVO MOTOR: MAPA DE CALOR (HEATMAP) */
+    function renderHeatmap() {
+      const container = document.getElementById('heatmapContainer');
+      if(!container) return;
+      container.innerHTML = '';
+      
+      let html = '';
+      let dataHeat = new Date();
+      dataHeat.setDate(dataHeat.getDate() - 84); // Últimas 12 semanas (84 dias)
+      const dataHoje = new Date();
+      
+      while(dataHeat <= dataHoje) {
+        const dateStr = dataHeat.getFullYear() + '-' + String(dataHeat.getMonth() + 1).padStart(2, '0') + '-' + String(dataHeat.getDate()).padStart(2, '0');
+        const record = (stats.historico || []).find(h => h.data === dateStr);
+        const total = record ? (record.acertos + record.erros) : 0;
+        
+        let colorClass = 'bg-slate-800 border border-slate-700/50';
+        if(total > 0 && total <= 10) colorClass = 'bg-emerald-900/60';
+        else if(total > 10 && total <= 30) colorClass = 'bg-emerald-700/80';
+        else if(total > 30 && total <= 50) colorClass = 'bg-emerald-500';
+        else if(total > 50) colorClass = 'bg-emerald-400 shadow-[0_0_5px_rgba(52,211,153,0.5)]';
+        
+        html += `<div class="w-3 h-3 md:w-4 md:h-4 rounded-[3px] ${colorClass}" title="${formatBR(dateStr)}: ${total} revisões"></div>`;
+        dataHeat.setDate(dataHeat.getDate() + 1);
+      }
+      
+      container.innerHTML = `<div class="grid grid-rows-7 grid-flow-col gap-1.5 custom-scroll-x">${html}</div>`;
     }
 
-    renderFolders(); updateDesempenhoStats(); initChart();
+    renderFolders(); updateDesempenhoStats(); renderHeatmap();
   </script>
 </body>
 </html>
