@@ -54,7 +54,7 @@
 
     <div class="p-4 border-b border-slate-800/80 center-on-collapse flex flex-col gap-2">
       <button onclick="showDesempenho()" id="btnDesempenho" class="w-full flex items-center gap-3 p-2 rounded-lg transition-colors bg-indigo-500/10 text-indigo-400 font-medium border border-indigo-500/20 center-on-collapse">
-        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012-2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
         <span class="hide-on-collapse">Desempenho</span>
       </button>
       
@@ -186,7 +186,7 @@
       
       <!-- BARRA DE FEEDBACK DINÂMICA -->
       <div id="studyFeedbackBar" class="hidden absolute bottom-0 left-0 w-full h-auto min-h-[96px] py-4 border-t border-slate-800 bg-slate-900/95 backdrop-blur-md flex-row items-center justify-center gap-2 md:gap-4 px-4 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] z-50">
-        <!-- Botões injetados via JS dependendo do acerto/erro -->
+        <!-- Botões injetados via JS -->
       </div>
     </div>
 
@@ -219,7 +219,7 @@
     </div>
   </main>
 
-  <!-- MODAL: NOVA PASTA (Omitido visualmente, igual ao anterior) -->
+  <!-- MODAL: NOVA PASTA -->
   <div id="modalFolder" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl">
       <h3 class="text-lg font-bold text-white mb-4">Criar Nova Pasta</h3>
@@ -238,7 +238,7 @@
     </div>
   </div>
 
-  <!-- MODAL: ADICIONAR CONTEÚDO (Omitido visualmente, igual ao anterior) -->
+  <!-- MODAL: ADICIONAR CONTEÚDO -->
   <div id="modalContent" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4 overflow-y-auto py-10">
     <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-2xl shadow-2xl my-auto">
       <h3 id="modalContentTitle" class="text-lg font-bold text-white mb-4">Adicionar Conteúdo</h3>
@@ -578,12 +578,15 @@
     function startStudyMode(tipo) {
       const pastasIds = getIdsSubpastas(pastaAtivaId); filaEstudo = conteudos.filter(c => c.tipo === tipo && pastasIds.includes(c.pastaId) && isCardDue(c));
       if(filaEstudo.length === 0) return alert('Parabéns! Não há mais cartões pendentes de revisão desta categoria para hoje.');
-      filaEstudo.sort(() => Math.random() - 0.5); if(!sidebarCollapsed) toggleSidebar(true);
+      filaEstudo.sort(() => Math.random() - 0.5); 
+      
+      /* OCULTA A BARRA LATERAL COMPLETAMENTE NO MODO ESTUDO */
+      document.getElementById('sidebar').style.display = 'none';
+      
       document.getElementById('view-dashboard').classList.replace('flex', 'hidden'); document.getElementById('view-study').classList.replace('hidden', 'flex');
       renderProxItem();
     }
 
-    // --- NOVA RENDERIZAÇÃO DE FEEDBACK ---
     function renderFeedbackBar(tipo, acertouQuestao) {
       const bar = document.getElementById('studyFeedbackBar');
       
@@ -639,22 +642,29 @@
       if (itemAtual.tipo === 'questao') {
         let altsHtml = ''; itemAtual.alternativas.forEach((alt, index) => { altsHtml += `<button id="alt-${index}" onclick="responderQuestao(${index})" class="w-full text-left p-4 md:p-5 rounded-xl border border-slate-700/80 bg-slate-800/40 hover:bg-slate-700 hover:border-slate-500 text-slate-300 font-medium transition-all mb-3 text-sm md:text-base">${alt}</button>`; });
         container.innerHTML = `
-          <div id="questaoCardContainer" class="bg-slate-900/50 border border-slate-700/50 p-6 md:p-10 rounded-3xl shadow-2xl w-full transition-all duration-300">
+          <div id="questaoCardContainer" class="bg-slate-900/50 border border-slate-700/50 p-6 md:p-12 rounded-3xl shadow-2xl w-full transition-all duration-300">
             ${imgTag}<h3 class="text-base md:text-lg text-slate-100 font-medium leading-relaxed mb-6 md:mb-8">${itemAtual.enunciado}</h3><div id="alternativasContainer">${altsHtml}</div>
             <div id="comentarioBox" class="hidden mt-6 md:mt-8 p-5 md:p-6 rounded-2xl border border-indigo-500/30 bg-indigo-500/5"><div class="flex items-center gap-2 mb-3"><span class="text-xl">🤖</span><span class="text-xs font-bold uppercase tracking-wider text-indigo-400">Comentário</span></div><p class="text-sm text-slate-300 leading-relaxed">${itemAtual.comentario}</p></div>
           </div>
         `;
       } else {
+        /* ALTURA AUMENTADA E ENCAPSULAMENTO COM FLEXBOX PARA EVITAR CORTES */
         container.innerHTML = `
-          <div class="perspective w-full h-[400px] md:h-[450px] cursor-pointer group" onclick="flipStudyCard()">
+          <div class="perspective w-full h-[450px] md:h-[500px] cursor-pointer group" onclick="flipStudyCard()">
             <div id="studyCardInner" class="relative w-full h-full transform-style-3d transition-transform duration-700 rounded-3xl shadow-2xl">
-              <div class="absolute inset-0 backface-hidden bg-slate-800 border border-slate-700/80 group-hover:border-slate-500 rounded-3xl p-8 md:p-10 flex flex-col justify-center items-center text-center transition-colors">
-                ${imgTag}<p class="text-xl md:text-3xl font-medium text-slate-100 leading-relaxed overflow-y-auto">${itemAtual.frente}</p><div class="absolute bottom-6 flex flex-col items-center opacity-50"><span class="text-2xl animate-bounce mb-1">👆</span><span class="text-xs text-slate-400 font-medium">Toque para revelar</span></div>
+              <div class="absolute inset-0 backface-hidden bg-slate-800 border border-slate-700/80 group-hover:border-slate-500 rounded-3xl p-8 md:p-12 flex flex-col justify-center items-center text-center transition-colors overflow-y-auto">
+                ${imgTag}
+                <div class="flex-1 flex flex-col justify-center items-center w-full py-4">
+                  <p class="text-xl md:text-3xl font-medium text-slate-100 leading-relaxed">${itemAtual.frente}</p>
+                </div>
+                <div class="absolute bottom-6 flex flex-col items-center opacity-50 shrink-0"><span class="text-2xl animate-bounce mb-1">👆</span><span class="text-xs text-slate-400 font-medium">Toque para revelar</span></div>
               </div>
-              <div class="absolute inset-0 backface-hidden rotate-y-180 bg-slate-800 border border-indigo-500/50 rounded-3xl p-8 md:p-10 flex flex-col justify-center items-center text-center overflow-y-auto">
-                <span class="text-[10px] md:text-xs font-bold uppercase tracking-wider text-indigo-400 mb-6 border border-indigo-500/20 bg-indigo-500/10 px-3 py-1 rounded-full shrink-0">Resposta</span>
-                <p class="text-lg md:text-2xl font-medium text-white leading-relaxed mb-6">${itemAtual.verso}</p>
-                <button onclick="event.stopPropagation(); document.getElementById('studyCardInner').classList.remove('rotate-y-180');" class="mt-auto px-4 py-2 bg-slate-700/50 hover:bg-slate-700 rounded-lg text-slate-300 text-sm font-medium border border-slate-600 transition flex items-center gap-2">
+              <div class="absolute inset-0 backface-hidden rotate-y-180 bg-slate-800 border border-indigo-500/50 rounded-3xl p-8 md:p-12 flex flex-col items-center text-center overflow-y-auto">
+                <span class="text-[10px] md:text-xs font-bold uppercase tracking-wider text-indigo-400 mb-8 mt-2 border border-indigo-500/20 bg-indigo-500/10 px-3 py-1 rounded-full shrink-0">Resposta</span>
+                <div class="flex-1 flex flex-col justify-center w-full">
+                  <p class="text-lg md:text-2xl font-medium text-white leading-relaxed mb-6">${itemAtual.verso}</p>
+                </div>
+                <button onclick="event.stopPropagation(); document.getElementById('studyCardInner').classList.remove('rotate-y-180');" class="mt-4 mb-2 px-5 py-3 bg-slate-700/50 hover:bg-slate-700 rounded-xl text-slate-300 text-sm font-medium border border-slate-600 transition flex items-center gap-2 shrink-0">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg> Ler Pergunta Novamente
                 </button>
               </div>
@@ -718,7 +728,13 @@
       salvarDadosGlobais(); renderProxItem(); 
     }
 
-    function exitStudyMode() { document.getElementById('view-study').classList.replace('flex', 'hidden'); selectFolder(pastaAtivaId); if(sidebarCollapsed) toggleSidebar(false); }
+    function exitStudyMode() { 
+      /* RESTAURA A BARRA LATERAL AO SAIR DO MODO ESTUDO */
+      document.getElementById('sidebar').style.display = 'flex';
+      document.getElementById('view-study').classList.replace('flex', 'hidden'); 
+      selectFolder(pastaAtivaId); 
+      if(sidebarCollapsed) toggleSidebar(false); 
+    }
 
     function initChart() {
       if(chartInstance) chartInstance.destroy(); const ctx = document.getElementById('performanceChart').getContext('2d');
