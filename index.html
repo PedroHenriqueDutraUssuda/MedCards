@@ -74,7 +74,7 @@
     </div>
     <div class="p-4 border-b border-slate-800/80 center-on-collapse flex flex-col gap-2">
       <button onclick="window.showDesempenho()" id="btnDesempenho" class="w-full flex items-center gap-3 p-2 rounded-lg transition-colors bg-indigo-500/10 text-indigo-400 font-medium border border-indigo-500/20 center-on-collapse">
-        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012-2h2a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
         <span class="hide-on-collapse">Desempenho</span>
       </button>
       <button onclick="window.showConfig()" id="btnConfig" class="w-full flex items-center gap-3 p-2 rounded-lg transition-colors text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-transparent center-on-collapse">
@@ -189,6 +189,23 @@
           </div>
         </div>
 
+        <!-- BLOCO DE MIGRAÇÃO -->
+        <div class="admin-only bg-slate-800/40 border border-slate-700/50 p-6 md:p-8 rounded-2xl shadow-xl mb-8">
+          <div class="flex items-center gap-3 mb-2"><span class="text-2xl">☁️</span><h3 class="text-xl font-bold text-white">Migração e Backup (Nuvem)</h3></div>
+          <p class="text-slate-400 mb-8 text-sm leading-relaxed">Envie o seu arquivo .json antigo para popular o banco de dados ou faça o download de um backup de segurança de toda a nuvem.</p>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <button onclick="window.exportarBackup()" class="flex flex-col items-center justify-center p-6 bg-slate-900 border border-indigo-500/30 hover:border-indigo-500 hover:bg-indigo-500/10 rounded-xl transition-all group shadow-lg">
+              <span class="text-3xl mb-3 group-hover:-translate-y-1 transition-transform">⬇️</span><span class="font-bold text-slate-200">Exportar Backup</span><span class="text-xs text-slate-500 mt-2 text-center">Salva toda a nuvem num arquivo .json.</span>
+            </button>
+            <button onclick="document.getElementById('importFile').click()" class="flex flex-col items-center justify-center p-6 bg-slate-900 border border-emerald-500/30 hover:border-emerald-500 hover:bg-emerald-500/10 rounded-xl transition-all group shadow-lg">
+              <span class="text-3xl mb-3 group-hover:-translate-y-1 transition-transform">⬆️</span><span class="font-bold text-slate-200">Restaurar / Migrar</span><span class="text-xs text-slate-500 mt-2 text-center">Envia um arquivo .json para o Firebase.</span>
+            </button>
+            <input type="file" id="importFile" accept=".json" class="hidden" onchange="window.importarBackup(event)">
+          </div>
+        </div>
+        <!-- FIM DO BLOCO DE MIGRAÇÃO -->
+
         <div class="bg-slate-800/40 border border-slate-700/50 p-6 md:p-8 rounded-2xl shadow-xl">
            <h3 class="text-lg font-bold text-slate-200 mb-2">Sessão</h3>
            <p class="text-slate-400 mb-6 text-sm">Terminar sessão desvinculará este dispositivo do seu progresso pessoal.</p>
@@ -252,8 +269,8 @@
 
     // Estruturas Locais
     let pastas = [];
-    let conteudos_base = []; // Cartões partilhados (sem datas)
-    let revisoes = {}; // Progresso individual { cardId: "YYYY-MM-DD" }
+    let conteudos_base = []; 
+    let revisoes = {}; 
     let stats = { totalAcertos: 0, totalErros: 0, revisadosHoje: 0, dataUltimoAcesso: getToday(), metaDiaria: 50, historico: [{ data: getToday(), acertos: 0, erros: 0 }] };
 
     // Utilitários de Data
@@ -317,15 +334,12 @@
     // --- CARREGAMENTO DA NUVEM ---
     async function carregarNuvem() {
       try {
-        // Carrega Pastas partilhadas
         const snapPastas = await getDocs(collection(db, "pastas"));
         pastas = []; snapPastas.forEach(doc => pastas.push({ id: doc.id, ...doc.data() }));
         
-        // Carrega Cartões partilhados
         const snapCards = await getDocs(collection(db, "conteudos"));
         conteudos_base = []; snapCards.forEach(doc => conteudos_base.push({ id: doc.id, ...doc.data() }));
         
-        // Carrega Progresso Pessoal
         const userStatsDoc = await getDoc(doc(db, `usuarios/${currentUser.uid}/dados/estatisticas`));
         if (userStatsDoc.exists()) { stats = userStatsDoc.data(); }
         
@@ -358,9 +372,65 @@
       if (stats.dataUltimoAcesso !== hoje) {
         stats.revisadosHoje = 0; stats.dataUltimoAcesso = hoje; stats.historico.push({ data: hoje, acertos: 0, erros: 0 });
         if (stats.historico.length > 90) stats.historico.shift(); 
-        salvarStatsNuvem(); // Guarda de forma assíncrona
+        salvarStatsNuvem(); 
       }
     }
+
+    // --- BACKUP E MIGRAÇÃO PARA NUVEM ---
+    window.exportarBackup = () => {
+      const dataToExport = { pastas: pastas, conteudos: conteudos_base, stats: stats, revisoes: revisoes, exportDate: new Date().toISOString() };
+      const jsonString = JSON.stringify(dataToExport, null, 2); const blob = new Blob([jsonString], { type: "application/json" });
+      const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `medcards_nuvem_${getToday().replace(/-/g, '')}.json`;
+      document.body.appendChild(a); a.click(); setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+    };
+
+    window.importarBackup = async (event) => {
+      if(!isAdmin) return alert("Ative o Modo Administrador para enviar um banco de dados!");
+      const file = event.target.files[0]; if (!file) return; 
+      const reader = new FileReader();
+      
+      reader.onload = async function(e) {
+        try {
+          const importedData = JSON.parse(e.target.result);
+          const dadosCards = importedData.conteudos || importedData.conteudos_base;
+          
+          if(importedData.pastas && dadosCards) {
+            if(confirm("MIGRAÇÃO: Deseja enviar todo o conteúdo deste arquivo JSON para a sua Nuvem? (Isto fará o upload de todas as pastas e cartões)")) {
+              
+              alert("A migração vai começar. Clique em OK e aguarde a mensagem de Sucesso (pode demorar alguns segundos). Não feche a página!");
+
+              const batchPromessas = [];
+
+              importedData.pastas.forEach(p => {
+                batchPromessas.push(setDoc(doc(db, "pastas", p.id), { nome: p.nome, parentId: p.parentId }));
+              });
+
+              dadosCards.forEach(c => {
+                const obj = { pastaId: c.pastaId, tipo: c.tipo, imagem: c.imagem || "" };
+                if (c.tipo === 'flashcard') { obj.frente = c.frente; obj.verso = c.verso; }
+                else if (c.tipo === 'questao') { obj.enunciado = c.enunciado; obj.comentario = c.comentario; obj.correta = c.correta; obj.alternativas = c.alternativas; }
+                batchPromessas.push(setDoc(doc(db, "conteudos", c.id), obj));
+                
+                if(c.proximaRevisao) {
+                   batchPromessas.push(salvarRevisaoNuvem(c.id, c.proximaRevisao));
+                }
+              });
+
+              if(importedData.stats) {
+                 stats = importedData.stats;
+                 batchPromessas.push(salvarStatsNuvem());
+              }
+
+              await Promise.all(batchPromessas);
+              alert("MIGRAÇÃO CONCLUÍDA! O seu acervo local agora está 100% na Nuvem.");
+              window.location.reload(); 
+            }
+          } else { alert("Arquivo JSON inválido ou incompatível."); }
+        } catch (err) { alert("Erro ao ler o arquivo: " + err.message); }
+        event.target.value = ''; 
+      };
+      reader.readAsText(file);
+    };
 
     // --- VARIÁVEIS DE ESTADO UI ---
     let pastaAtivaId = null; let sidebarCollapsed = false; let filaEstudo = []; let itemAtual = null; let interfaceRespondida = false; let editandoId = null; let pastasFechadas = new Set();
@@ -501,68 +571,6 @@
       }
     };
 
-        // --- BACKUP E MIGRAÇÃO PARA NUVEM ---
-    window.exportarBackup = () => {
-      const dataToExport = { pastas: pastas, conteudos: conteudos_base, stats: stats, revisoes: revisoes, exportDate: new Date().toISOString() };
-      const jsonString = JSON.stringify(dataToExport, null, 2); const blob = new Blob([jsonString], { type: "application/json" });
-      const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `medcards_nuvem_${getToday().replace(/-/g, '')}.json`;
-      document.body.appendChild(a); a.click(); setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
-    };
-
-    window.importarBackup = async (event) => {
-      if(!isAdmin) return alert("Ative o Modo Administrador para enviar um banco de dados!");
-      const file = event.target.files[0]; if (!file) return; 
-      const reader = new FileReader();
-      
-      reader.onload = async function(e) {
-        try {
-          const importedData = JSON.parse(e.target.result);
-          // O backup antigo guardava em "conteudos", o novo exporta em "conteudos_base"
-          const dadosCards = importedData.conteudos || importedData.conteudos_base;
-          
-          if(importedData.pastas && dadosCards) {
-            if(confirm("MIGRAÇÃO: Deseja enviar todo o conteúdo deste arquivo JSON para a sua Nuvem? (Isto fará o upload de todas as pastas e cartões)")) {
-              
-              alert("A migração vai começar. Clique em OK e aguarde a mensagem de Sucesso (pode demorar alguns segundos). Não feche a página!");
-
-              const batchPromessas = [];
-
-              // 1. Enviar Pastas
-              importedData.pastas.forEach(p => {
-                batchPromessas.push(setDoc(doc(db, "pastas", p.id), { nome: p.nome, parentId: p.parentId }));
-              });
-
-              // 2. Enviar Cartões e Datas de Revisão Pessoal
-              dadosCards.forEach(c => {
-                const obj = { pastaId: c.pastaId, tipo: c.tipo, imagem: c.imagem || "" };
-                if (c.tipo === 'flashcard') { obj.frente = c.frente; obj.verso = c.verso; }
-                else if (c.tipo === 'questao') { obj.enunciado = c.enunciado; obj.comentario = c.comentario; obj.correta = c.correta; obj.alternativas = c.alternativas; }
-                batchPromessas.push(setDoc(doc(db, "conteudos", c.id), obj));
-                
-                // Restaura as datas de revisão que você já tinha no arquivo local
-                if(c.proximaRevisao) {
-                   batchPromessas.push(salvarRevisaoNuvem(c.id, c.proximaRevisao));
-                }
-              });
-
-              // 3. Restaurar Estatísticas e Mapa de Calor
-              if(importedData.stats) {
-                 stats = importedData.stats;
-                 batchPromessas.push(salvarStatsNuvem());
-              }
-
-              await Promise.all(batchPromessas);
-              alert("MIGRAÇÃO CONCLUÍDA! O seu acervo local agora está 100% na Nuvem.");
-              window.location.reload(); // Recarrega a página para puxar os dados novos e exibir na tela
-            }
-          } else { alert("Arquivo JSON inválido ou incompatível."); }
-        } catch (err) { alert("Erro ao ler o arquivo: " + err.message); }
-        event.target.value = ''; // Reseta o input
-      };
-      reader.readAsText(file);
-    };
-
-
     // --- NAVEGAÇÃO E APRESENTAÇÃO ---
     function getIdsSubpastas(folderId) { let ids = [folderId]; pastas.filter(p => p.parentId === folderId).forEach(f => ids = ids.concat(getIdsSubpastas(f.id))); return ids; }
     window.toggleSidebar = (forceCollapse = false) => {
@@ -610,7 +618,6 @@
       document.getElementById('badgeQuestao').className = pendQ > 0 ? "mt-4 bg-indigo-500/10 text-indigo-400 px-4 py-1.5 rounded-full text-sm font-bold border border-indigo-500/30" : "mt-4 bg-slate-500/10 text-slate-400 px-4 py-1.5 rounded-full text-sm font-medium border border-slate-500/20"; 
       document.getElementById('badgeFlashcard').className = pendF > 0 ? "mt-4 bg-cyan-500/10 text-cyan-400 px-4 py-1.5 rounded-full text-sm font-bold border border-cyan-500/30" : "mt-4 bg-slate-500/10 text-slate-400 px-4 py-1.5 rounded-full text-sm font-medium border border-slate-500/20"; 
 
-      // Lista de Conteúdo Direto
       const cont = document.getElementById('listaConteudoPasta'); cont.innerHTML = '';
       const dirItens = merged.filter(c => c.pastaId === id);
       document.getElementById('dashManageCount').textContent = `${dirItens.length} itens`;
