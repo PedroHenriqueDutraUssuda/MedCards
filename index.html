@@ -20,7 +20,7 @@
     .custom-scroll-x::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
 
     .sidebar-transition { transition: width 0.3s ease-in-out; }
-    .sidebar-collapsed .hide-on-collapse { display: none; }
+    .sidebar-collapsed .hide-on-collapse { display: none !important; }
     .sidebar-collapsed .center-on-collapse { justify-content: center; padding-left: 0 !important; padding-right: 0 !important; }
 
     .perspective { perspective: 1000px; }
@@ -72,9 +72,22 @@
         <p class="text-[10px] uppercase tracking-widest text-slate-500 font-semibold" id="userEmailDisplay">A carregar...</p>
       </div>
     </div>
+    
     <div class="p-4 border-b border-slate-800/80 center-on-collapse flex flex-col gap-2">
+      <!-- PESQUISA GERAL (NOVIDADE) -->
+      <div class="relative w-full hide-on-collapse mb-1">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        </div>
+        <input type="text" id="inputBusca" onkeyup="window.buscarConteudo()" placeholder="Procurar cartões..." class="w-full bg-slate-950/50 border border-slate-700/80 rounded-lg pl-9 pr-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition">
+      </div>
+      <!-- BOTÃO LUPA (Visível apenas quando a barra lateral está fechada) -->
+      <button onclick="window.toggleSidebar(false); setTimeout(()=>document.getElementById('inputBusca').focus(), 300)" class="w-full flex items-center justify-center p-2 rounded-lg text-slate-400 hover:bg-slate-800 transition mb-1" style="display: none;" id="btnBuscaColapsado">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+      </button>
+
       <button onclick="window.showDesempenho()" id="btnDesempenho" class="w-full flex items-center gap-3 p-2 rounded-lg transition-colors bg-indigo-500/10 text-indigo-400 font-medium border border-indigo-500/20 center-on-collapse">
-        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012-2h2a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
         <span class="hide-on-collapse">Desempenho</span>
       </button>
       <button onclick="window.showConfig()" id="btnConfig" class="w-full flex items-center gap-3 p-2 rounded-lg transition-colors text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-transparent center-on-collapse">
@@ -189,7 +202,6 @@
           </div>
         </div>
 
-        <!-- BLOCO DE MIGRAÇÃO -->
         <div class="admin-only bg-slate-800/40 border border-slate-700/50 p-6 md:p-8 rounded-2xl shadow-xl mb-8">
           <div class="flex items-center gap-3 mb-2"><span class="text-2xl">☁️</span><h3 class="text-xl font-bold text-white">Migração e Backup (Nuvem)</h3></div>
           <p class="text-slate-400 mb-8 text-sm leading-relaxed">Envie o seu arquivo .json antigo para popular o banco de dados ou faça o download de um backup de segurança de toda a nuvem.</p>
@@ -204,7 +216,6 @@
             <input type="file" id="importFile" accept=".json" class="hidden" onchange="window.importarBackup(event)">
           </div>
         </div>
-        <!-- FIM DO BLOCO DE MIGRAÇÃO -->
 
         <div class="bg-slate-800/40 border border-slate-700/50 p-6 md:p-8 rounded-2xl shadow-xl">
            <h3 class="text-lg font-bold text-slate-200 mb-2">Sessão</h3>
@@ -213,6 +224,21 @@
         </div>
       </div>
     </div>
+
+    <!-- VISÃO 5: RESULTADOS DA PESQUISA (NOVIDADE) -->
+    <div id="view-pesquisa" class="hidden absolute inset-0 flex-col overflow-y-auto z-10 bg-[#090E17]">
+      <header class="h-20 border-b border-slate-800/60 px-6 md:px-10 flex items-center shrink-0 bg-slate-900/40 backdrop-blur-md sticky top-0">
+        <div class="flex items-center gap-3">
+          <svg class="w-6 h-6 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          <h2 class="text-xl md:text-2xl font-bold text-slate-100 tracking-tight truncate">Resultados da Pesquisa</h2>
+        </div>
+      </header>
+      <div class="p-6 md:p-10 max-w-5xl mx-auto w-full flex-1">
+        <p class="text-slate-400 mb-6 text-sm">A mostrar cartões correspondentes a: <strong id="termoBuscaDisplay" class="text-white"></strong></p>
+        <div id="listaResultadosBusca" class="flex flex-col gap-3 pb-8"></div>
+      </div>
+    </div>
+
   </main>
 
   <!-- MODAIS RESTANTES -->
@@ -273,12 +299,10 @@
     let revisoes = {}; 
     let stats = { totalAcertos: 0, totalErros: 0, revisadosHoje: 0, dataUltimoAcesso: getToday(), metaDiaria: 50, historico: [{ data: getToday(), acertos: 0, erros: 0 }] };
 
-    // Utilitários de Data
     function getToday() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
     function addDays(days) { const d = new Date(); d.setDate(d.getDate() + days); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
     function formatBR(dateStr) { if(!dateStr) return ''; const p = dateStr.split('-'); return `${p[2]}/${p[1]}`; }
     
-    // Calcula cartão pendente mesclando base com revisão pessoal
     function getMergedCard(card) {
       const proximaRevisao = revisoes[card.id] || null;
       return { ...card, proximaRevisao };
@@ -324,8 +348,7 @@
       if (isAdmin) return alert("O modo administrador já está ativo!");
       const p = prompt("Digite a palavra-passe de administrador para desbloquear edição geral:");
       if (p === "med123") {
-        isAdmin = true;
-        document.body.classList.add('modo-admin');
+        isAdmin = true; document.body.classList.add('modo-admin');
         document.getElementById('adminControls').innerHTML = `<p class="text-emerald-400 font-bold text-sm">✅ Cadeado Aberto. Pode adicionar e editar a base de dados central.</p>`;
         alert("Modo de Edição Global Ativado!");
       } else if(p) { alert("Palavra-passe incorreta."); }
@@ -346,10 +369,7 @@
         const snapRevisoes = await getDocs(collection(db, `usuarios/${currentUser.uid}/revisoes`));
         revisoes = {}; snapRevisoes.forEach(doc => { revisoes[doc.id] = doc.data().proximaRevisao; });
 
-        verificarDia();
-        renderFolders();
-        updateDesempenhoStats();
-        renderHeatmap();
+        verificarDia(); renderFolders(); updateDesempenhoStats(); renderHeatmap();
       } catch (e) {
         console.error("Erro a carregar:", e); alert("Erro ao ligar ao servidor.");
       }
@@ -376,7 +396,6 @@
       }
     }
 
-    // --- BACKUP E MIGRAÇÃO PARA NUVEM ---
     window.exportarBackup = () => {
       const dataToExport = { pastas: pastas, conteudos: conteudos_base, stats: stats, revisoes: revisoes, exportDate: new Date().toISOString() };
       const jsonString = JSON.stringify(dataToExport, null, 2); const blob = new Blob([jsonString], { type: "application/json" });
@@ -386,44 +405,23 @@
 
     window.importarBackup = async (event) => {
       if(!isAdmin) return alert("Ative o Modo Administrador para enviar um banco de dados!");
-      const file = event.target.files[0]; if (!file) return; 
-      const reader = new FileReader();
-      
+      const file = event.target.files[0]; if (!file) return; const reader = new FileReader();
       reader.onload = async function(e) {
         try {
-          const importedData = JSON.parse(e.target.result);
-          const dadosCards = importedData.conteudos || importedData.conteudos_base;
-          
+          const importedData = JSON.parse(e.target.result); const dadosCards = importedData.conteudos || importedData.conteudos_base;
           if(importedData.pastas && dadosCards) {
-            if(confirm("MIGRAÇÃO: Deseja enviar todo o conteúdo deste arquivo JSON para a sua Nuvem? (Isto fará o upload de todas as pastas e cartões)")) {
-              
-              alert("A migração vai começar. Clique em OK e aguarde a mensagem de Sucesso (pode demorar alguns segundos). Não feche a página!");
-
+            if(confirm("MIGRAÇÃO: Deseja enviar todo o conteúdo deste arquivo JSON para a sua Nuvem?")) {
+              alert("A migração vai começar. Clique em OK e aguarde a mensagem de Sucesso.");
               const batchPromessas = [];
-
-              importedData.pastas.forEach(p => {
-                batchPromessas.push(setDoc(doc(db, "pastas", p.id), { nome: p.nome, parentId: p.parentId }));
-              });
-
+              importedData.pastas.forEach(p => { batchPromessas.push(setDoc(doc(db, "pastas", p.id), { nome: p.nome, parentId: p.parentId })); });
               dadosCards.forEach(c => {
                 const obj = { pastaId: c.pastaId, tipo: c.tipo, imagem: c.imagem || "" };
-                if (c.tipo === 'flashcard') { obj.frente = c.frente; obj.verso = c.verso; }
-                else if (c.tipo === 'questao') { obj.enunciado = c.enunciado; obj.comentario = c.comentario; obj.correta = c.correta; obj.alternativas = c.alternativas; }
+                if (c.tipo === 'flashcard') { obj.frente = c.frente; obj.verso = c.verso; } else if (c.tipo === 'questao') { obj.enunciado = c.enunciado; obj.comentario = c.comentario; obj.correta = c.correta; obj.alternativas = c.alternativas; }
                 batchPromessas.push(setDoc(doc(db, "conteudos", c.id), obj));
-                
-                if(c.proximaRevisao) {
-                   batchPromessas.push(salvarRevisaoNuvem(c.id, c.proximaRevisao));
-                }
+                if(c.proximaRevisao) { batchPromessas.push(salvarRevisaoNuvem(c.id, c.proximaRevisao)); }
               });
-
-              if(importedData.stats) {
-                 stats = importedData.stats;
-                 batchPromessas.push(salvarStatsNuvem());
-              }
-
-              await Promise.all(batchPromessas);
-              alert("MIGRAÇÃO CONCLUÍDA! O seu acervo local agora está 100% na Nuvem.");
-              window.location.reload(); 
+              if(importedData.stats) { stats = importedData.stats; batchPromessas.push(salvarStatsNuvem()); }
+              await Promise.all(batchPromessas); alert("MIGRAÇÃO CONCLUÍDA! O seu acervo local agora está 100% na Nuvem."); window.location.reload(); 
             }
           } else { alert("Arquivo JSON inválido ou incompatível."); }
         } catch (err) { alert("Erro ao ler o arquivo: " + err.message); }
@@ -432,7 +430,6 @@
       reader.readAsText(file);
     };
 
-    // --- VARIÁVEIS DE ESTADO UI ---
     let pastaAtivaId = null; let sidebarCollapsed = false; let filaEstudo = []; let itemAtual = null; let interfaceRespondida = false; let editandoId = null; let pastasFechadas = new Set();
 
     window.alterarMeta = () => {
@@ -460,7 +457,57 @@
       container.innerHTML = `<div class="grid grid-rows-7 grid-flow-col gap-1.5 custom-scroll-x">${html}</div>`;
     }
 
-    // --- GESTÃO DE PASTAS ADMIN ---
+    /* MÓDULO: PESQUISA GLOBAL (NOVIDADE) */
+    window.buscarConteudo = () => {
+      const termo = document.getElementById('inputBusca').value.toLowerCase().trim();
+      if(termo.length < 2) {
+        if(!document.getElementById('view-pesquisa').classList.contains('hidden')) { window.showDesempenho(); }
+        return;
+      }
+      
+      pastaAtivaId = null; resetSidebarButtons();
+      ['view-desempenho', 'view-dashboard', 'view-study', 'view-config'].forEach(v => document.getElementById(v).classList.replace('flex', 'hidden'));
+      document.getElementById('view-pesquisa').classList.replace('hidden', 'flex');
+      
+      document.getElementById('termoBuscaDisplay').textContent = `"${termo}"`;
+      const cont = document.getElementById('listaResultadosBusca'); cont.innerHTML = '';
+      
+      const resultados = conteudos_base.filter(c => {
+        const texto = c.tipo === 'flashcard' ? (c.frente + " " + c.verso).toLowerCase() : (c.enunciado + " " + c.comentario + " " + (c.alternativas ? c.alternativas.join(" ") : "")).toLowerCase();
+        return texto.includes(termo);
+      });
+      
+      if(resultados.length === 0) {
+        cont.innerHTML = '<p class="text-sm text-slate-500 py-8 text-center">Nenhum cartão encontrado em todo o acervo.</p>'; return;
+      }
+      
+      resultados.forEach(item => {
+        const merged = getMergedCard(item);
+        let revText = 'NOVO'; let revCol = 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
+        if (merged.proximaRevisao && merged.proximaRevisao <= getToday()) { revText = 'HOJE'; revCol = 'text-rose-400 bg-rose-500/10 border-rose-500/20'; } 
+        else if (merged.proximaRevisao) { revText = `REV: ${formatBR(merged.proximaRevisao)}`; revCol = 'text-slate-400 bg-slate-700/30 border-slate-600/30'; }
+        
+        const pasta = pastas.find(p => p.id === item.pastaId); const nomePasta = pasta ? pasta.nome : 'Sem pasta';
+
+        cont.innerHTML += `
+          <div class="bg-slate-800/40 border border-slate-700/60 p-4 rounded-xl flex items-center justify-between gap-4 transition hover:border-indigo-500/50">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="inline-block text-[10px] font-bold uppercase border text-slate-400 px-2 py-0.5 rounded-md border-slate-700/50">${item.tipo==='flashcard'?'⚡':'📝'}</span>
+                <span class="inline-block text-[10px] font-bold uppercase border px-2 py-0.5 rounded-md ${revCol}">${revText}</span>
+                <span class="inline-block text-[10px] font-semibold text-slate-400 bg-slate-900 border border-slate-700/50 px-2 py-0.5 rounded-md truncate max-w-[150px]">📁 ${nomePasta}</span>
+              </div>
+              <p class="text-sm text-slate-200 truncate pr-4">${item.tipo==='flashcard'?item.frente:item.enunciado}</p>
+            </div>
+            <div class="admin-only flex items-center gap-1 shrink-0">
+              <button onclick="window.editarConteudo('${item.id}')" class="text-slate-500 hover:text-indigo-400 p-2 bg-slate-900 rounded-lg hover:bg-slate-800 border border-slate-700/50 transition"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
+              <button onclick="window.deletarConteudo('${item.id}')" class="text-slate-500 hover:text-rose-400 p-2 bg-slate-900 rounded-lg hover:bg-slate-800 border border-slate-700/50 transition"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+            </div>
+          </div>
+        `;
+      });
+    };
+
     window.openFolderModal = () => {
       const select = document.getElementById('selectFolderParent'); select.innerHTML = '<option value="">Nenhuma (Pasta Principal)</option>';
       [...pastas].sort((a,b) => a.nome.localeCompare(b.nome)).forEach(p => { select.innerHTML += `<option value="${p.id}">${p.nome}</option>`; });
@@ -471,34 +518,25 @@
     window.createFolder = async () => {
       if(!isAdmin) return alert("Modo de administrador desativado.");
       const nome = document.getElementById('inputFolderName').value.trim(); const parentId = document.getElementById('selectFolderParent').value || null;
-      if (!nome) return alert("Digite o nome da pasta!"); 
-      const novaId = 'p_' + Date.now();
-      pastas.push({ id: novaId, nome, parentId });
-      await setDoc(doc(db, "pastas", novaId), { nome, parentId });
-      window.closeFolderModal(); renderFolders();
+      if (!nome) return alert("Digite o nome da pasta!"); const novaId = 'p_' + Date.now(); pastas.push({ id: novaId, nome, parentId });
+      await setDoc(doc(db, "pastas", novaId), { nome, parentId }); window.closeFolderModal(); renderFolders();
     };
 
     window.renomearPastaAtiva = async () => {
       if(!isAdmin) return; const pasta = pastas.find(p => p.id === pastaAtivaId); const novoNome = prompt("Novo nome:", pasta.nome);
-      if(novoNome && novoNome.trim() !== "") { 
-        pasta.nome = novoNome.trim(); 
-        await setDoc(doc(db, "pastas", pasta.id), { nome: pasta.nome, parentId: pasta.parentId });
-        renderFolders(); window.selectFolder(pastaAtivaId); 
-      }
+      if(novoNome && novoNome.trim() !== "") { pasta.nome = novoNome.trim(); await setDoc(doc(db, "pastas", pasta.id), { nome: pasta.nome, parentId: pasta.parentId }); renderFolders(); window.selectFolder(pastaAtivaId); }
     };
 
     window.abrirModalMover = () => {
       if(!isAdmin) return; const select = document.getElementById('selectMoveFolderParent'); select.innerHTML = '<option value="">Raiz</option>';
-      const proibidos = getIdsSubpastas(pastaAtivaId); 
-      [...pastas].sort((a,b) => a.nome.localeCompare(b.nome)).forEach(p => { if(!proibidos.includes(p.id)) select.innerHTML += `<option value="${p.id}">${p.nome}</option>`; });
+      const proibidos = getIdsSubpastas(pastaAtivaId); [...pastas].sort((a,b) => a.nome.localeCompare(b.nome)).forEach(p => { if(!proibidos.includes(p.id)) select.innerHTML += `<option value="${p.id}">${p.nome}</option>`; });
       document.getElementById('modalMover').classList.replace('hidden', 'flex');
     };
     window.fecharModalMover = () => document.getElementById('modalMover').classList.replace('flex', 'hidden');
     window.moverPasta = async () => {
       if(!isAdmin || !pastaAtivaId) return; const novo = document.getElementById('selectMoveFolderParent').value || null;
       const pasta = pastas.find(p => p.id === pastaAtivaId); pasta.parentId = novo;
-      await setDoc(doc(db, "pastas", pasta.id), { nome: pasta.nome, parentId: pasta.parentId });
-      window.fecharModalMover(); renderFolders(); window.selectFolder(pastaAtivaId);
+      await setDoc(doc(db, "pastas", pasta.id), { nome: pasta.nome, parentId: pasta.parentId }); window.fecharModalMover(); renderFolders(); window.selectFolder(pastaAtivaId);
     };
 
     window.excluirPastaAtiva = async () => {
@@ -507,11 +545,10 @@
         for(let c of cont) { await deleteDoc(doc(db, "conteudos", c.id)); }
         for(let p of pIds) { await deleteDoc(doc(db, "pastas", p)); }
         conteudos_base = conteudos_base.filter(c => !pIds.includes(c.pastaId)); pastas = pastas.filter(p => !pIds.includes(p.id)); 
-        pastaAtivaId = null; window.showDesempenho(); 
+        pastaAtivaId = null; document.getElementById('inputBusca').value = ''; window.showDesempenho(); 
       }
     };
 
-    // --- GESTÃO DE CONTEÚDO ADMIN ---
     window.openContentModal = () => {
       editandoId = null; document.getElementById('modalContentTitle').textContent = 'Adicionar à Nuvem'; document.getElementById('inputType').disabled = false; document.getElementById('inputType').value = 'flashcard';
       document.getElementById('inputImagem').value = ''; document.getElementById('inputFrente').value = ''; document.getElementById('inputVerso').value = ''; document.getElementById('inputEnunciado').value = ''; document.getElementById('inputComentario').value = ''; document.getElementById('inputJSON').value = '';
@@ -545,7 +582,7 @@
         } catch(e) { return alert("Erro no JSON: " + e.message); }
       }
 
-      let obj = { pastaId: pastaAtivaId, tipo: tipo, imagem: document.getElementById('inputImagem').value.trim() };
+      let obj = { pastaId: pastaAtivaId || conteudos_base.find(c=>c.id===editandoId).pastaId, tipo: tipo, imagem: document.getElementById('inputImagem').value.trim() };
       if (tipo === 'flashcard') { obj.frente = document.getElementById('inputFrente').value.trim(); obj.verso = document.getElementById('inputVerso').value.trim(); } 
       else if (tipo === 'questao') { obj.enunciado = document.getElementById('inputEnunciado').value.trim(); obj.comentario = document.getElementById('inputComentario').value.trim(); obj.correta = parseInt(document.getElementById('inputCorreta').value); obj.alternativas = [ document.getElementById('alt0').value.trim(), document.getElementById('alt1').value.trim(), document.getElementById('alt2').value.trim(), document.getElementById('alt3').value.trim(), document.getElementById('alt4').value.trim() ]; }
 
@@ -554,7 +591,10 @@
       else { conteudos_base.push({id: finalId, ...obj}); }
       
       await setDoc(doc(db, "conteudos", finalId), obj);
-      window.closeContentModal(); window.selectFolder(pastaAtivaId);
+      window.closeContentModal(); 
+      
+      if (document.getElementById('view-pesquisa').classList.contains('flex')) { window.buscarConteudo(); } 
+      else if (pastaAtivaId) { window.selectFolder(pastaAtivaId); }
     };
 
     window.editarConteudo = (id) => {
@@ -567,19 +607,22 @@
 
     window.deletarConteudo = async (id) => {
       if(!isAdmin) return; if(confirm("Apagar da nuvem para TODOS os utilizadores?")) {
-        conteudos_base = conteudos_base.filter(c => c.id !== id); await deleteDoc(doc(db, "conteudos", id)); window.selectFolder(pastaAtivaId);
+        conteudos_base = conteudos_base.filter(c => c.id !== id); await deleteDoc(doc(db, "conteudos", id)); 
+        if (document.getElementById('view-pesquisa').classList.contains('flex')) { window.buscarConteudo(); } 
+        else if (pastaAtivaId) { window.selectFolder(pastaAtivaId); }
       }
     };
 
-    // --- NAVEGAÇÃO E APRESENTAÇÃO ---
     function getIdsSubpastas(folderId) { let ids = [folderId]; pastas.filter(p => p.parentId === folderId).forEach(f => ids = ids.concat(getIdsSubpastas(f.id))); return ids; }
+    
     window.toggleSidebar = (forceCollapse = false) => {
-      const sidebar = document.getElementById('sidebar'); const icon = document.getElementById('collapseIcon');
+      const sidebar = document.getElementById('sidebar'); const icon = document.getElementById('collapseIcon'); const lupaBotao = document.getElementById('btnBuscaColapsado');
       if (forceCollapse) sidebarCollapsed = true; else sidebarCollapsed = !sidebarCollapsed;
-      if (sidebarCollapsed) { sidebar.classList.remove('w-72'); sidebar.classList.add('w-20', 'sidebar-collapsed'); icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />'; } 
-      else { sidebar.classList.remove('w-20', 'sidebar-collapsed'); sidebar.classList.add('w-72'); icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />'; }
+      if (sidebarCollapsed) { sidebar.classList.remove('w-72'); sidebar.classList.add('w-20', 'sidebar-collapsed'); icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />'; lupaBotao.style.display = 'flex'; } 
+      else { sidebar.classList.remove('w-20', 'sidebar-collapsed'); sidebar.classList.add('w-72'); icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />'; lupaBotao.style.display = 'none'; }
       renderFolders();
     };
+    
     window.togglePastaExpandida = (event, id) => { event.stopPropagation(); if(pastasFechadas.has(id)) pastasFechadas.delete(id); else pastasFechadas.add(id); renderFolders(); };
 
     function renderFolders() {
@@ -603,11 +646,12 @@
     }
 
     function resetSidebarButtons() { document.getElementById('btnDesempenho').className = "w-full flex items-center gap-3 p-2 rounded-lg transition-colors text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-transparent center-on-collapse"; document.getElementById('btnConfig').className = "w-full flex items-center gap-3 p-2 rounded-lg transition-colors text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-transparent center-on-collapse"; }
-    window.showDesempenho = () => { pastaAtivaId = null; renderFolders(); updateDesempenhoStats(); resetSidebarButtons(); document.getElementById('btnDesempenho').className = "w-full flex items-center gap-3 p-2 rounded-lg transition-colors bg-indigo-500/10 text-indigo-400 font-medium border border-indigo-500/20 center-on-collapse"; document.getElementById('view-dashboard').classList.replace('flex', 'hidden'); document.getElementById('view-study').classList.replace('flex', 'hidden'); document.getElementById('view-config').classList.replace('flex', 'hidden'); document.getElementById('view-desempenho').classList.replace('hidden', 'flex'); renderHeatmap(); };
-    window.showConfig = () => { pastaAtivaId = null; renderFolders(); resetSidebarButtons(); document.getElementById('btnConfig').className = "w-full flex items-center gap-3 p-2 rounded-lg transition-colors bg-indigo-500/10 text-indigo-400 font-medium border border-indigo-500/20 center-on-collapse"; document.getElementById('view-dashboard').classList.replace('flex', 'hidden'); document.getElementById('view-study').classList.replace('flex', 'hidden'); document.getElementById('view-desempenho').classList.replace('flex', 'hidden'); document.getElementById('view-config').classList.replace('hidden', 'flex'); };
+    
+    window.showDesempenho = () => { pastaAtivaId = null; document.getElementById('inputBusca').value = ''; renderFolders(); updateDesempenhoStats(); resetSidebarButtons(); document.getElementById('btnDesempenho').className = "w-full flex items-center gap-3 p-2 rounded-lg transition-colors bg-indigo-500/10 text-indigo-400 font-medium border border-indigo-500/20 center-on-collapse"; ['view-dashboard', 'view-study', 'view-config', 'view-pesquisa'].forEach(v => document.getElementById(v).classList.replace('flex', 'hidden')); document.getElementById('view-desempenho').classList.replace('hidden', 'flex'); renderHeatmap(); };
+    window.showConfig = () => { pastaAtivaId = null; document.getElementById('inputBusca').value = ''; renderFolders(); resetSidebarButtons(); document.getElementById('btnConfig').className = "w-full flex items-center gap-3 p-2 rounded-lg transition-colors bg-indigo-500/10 text-indigo-400 font-medium border border-indigo-500/20 center-on-collapse"; ['view-dashboard', 'view-study', 'view-desempenho', 'view-pesquisa'].forEach(v => document.getElementById(v).classList.replace('flex', 'hidden')); document.getElementById('view-config').classList.replace('hidden', 'flex'); };
 
     window.selectFolder = (id) => {
-      pastaAtivaId = id; resetSidebarButtons(); renderFolders();
+      pastaAtivaId = id; document.getElementById('inputBusca').value = ''; resetSidebarButtons(); renderFolders();
       const pIds = getIdsSubpastas(id); const merged = conteudos_base.map(getMergedCard).filter(c => pIds.includes(c.pastaId));
       
       const pendQ = merged.filter(c => c.tipo === 'questao' && isCardDue(c)).length;
@@ -626,9 +670,9 @@
         let revText = 'NOVO'; let revCol = 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
         if (item.proximaRevisao && item.proximaRevisao <= getToday()) { revText = 'HOJE'; revCol = 'text-rose-400 bg-rose-500/10 border-rose-500/20'; } 
         else if (item.proximaRevisao) { revText = `REV: ${formatBR(item.proximaRevisao)}`; revCol = 'text-slate-400 bg-slate-700/30 border-slate-600/30'; }
-        cont.innerHTML += `<div class="bg-slate-800/40 border border-slate-700/60 p-4 rounded-xl flex items-center justify-between gap-4"><div class="flex-1 min-w-0"><div class="flex items-center gap-2 mb-2"><span class="inline-block text-[10px] font-bold uppercase border text-slate-400 px-2 py-0.5 rounded-md border-slate-700/50">${item.tipo==='flashcard'?'⚡':'📝'}</span><span class="inline-block text-[10px] font-bold uppercase border px-2 py-0.5 rounded-md ${revCol}">${revText}</span></div><p class="text-sm text-slate-200 truncate pr-4">${item.tipo==='flashcard'?item.frente:item.enunciado}</p></div><div class="admin-only flex items-center gap-1 shrink-0"><button onclick="window.editarConteudo('${item.id}')" class="text-slate-500 hover:text-indigo-400 p-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button><button onclick="window.deletarConteudo('${item.id}')" class="text-slate-500 hover:text-rose-400 p-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div></div>`;
+        cont.innerHTML += `<div class="bg-slate-800/40 border border-slate-700/60 p-4 rounded-xl flex items-center justify-between gap-4 transition hover:border-indigo-500/50"><div class="flex-1 min-w-0"><div class="flex items-center gap-2 mb-2"><span class="inline-block text-[10px] font-bold uppercase border text-slate-400 px-2 py-0.5 rounded-md border-slate-700/50">${item.tipo==='flashcard'?'⚡':'📝'}</span><span class="inline-block text-[10px] font-bold uppercase border px-2 py-0.5 rounded-md ${revCol}">${revText}</span></div><p class="text-sm text-slate-200 truncate pr-4">${item.tipo==='flashcard'?item.frente:item.enunciado}</p></div><div class="admin-only flex items-center gap-1 shrink-0"><button onclick="window.editarConteudo('${item.id}')" class="text-slate-500 hover:text-indigo-400 p-2 bg-slate-900 rounded-lg hover:bg-slate-800 border border-slate-700/50 transition"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button><button onclick="window.deletarConteudo('${item.id}')" class="text-slate-500 hover:text-rose-400 p-2 bg-slate-900 rounded-lg hover:bg-slate-800 border border-slate-700/50 transition"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div></div>`;
       });
-      document.getElementById('view-desempenho').classList.replace('flex', 'hidden'); document.getElementById('view-study').classList.replace('flex', 'hidden'); document.getElementById('view-config').classList.replace('flex', 'hidden'); document.getElementById('view-dashboard').classList.replace('hidden', 'flex');
+      ['view-desempenho', 'view-study', 'view-config', 'view-pesquisa'].forEach(v => document.getElementById(v).classList.replace('flex', 'hidden')); document.getElementById('view-dashboard').classList.replace('hidden', 'flex');
     };
 
     window.resetarPasta = async () => {
@@ -640,7 +684,6 @@
       }
     };
 
-    // --- ESTUDO ---
     window.startStudyMode = (tipo) => {
       const pIds = getIdsSubpastas(pastaAtivaId); filaEstudo = conteudos_base.map(getMergedCard).filter(c => c.tipo === tipo && pIds.includes(c.pastaId) && isCardDue(c));
       if(filaEstudo.length === 0) return alert('Não há cartões pendentes hoje.');
@@ -672,11 +715,8 @@
     window.flipCard = () => { if (!interfaceRespondida) { interfaceRespondida = true; renderFeedbackBar('flashcard', null); } document.getElementById('sC').classList.add('rotate-y-180'); };
 
     window.processFeedback = async (acao) => {
-      verificarDia(); stats.revisadosHoje++; let hO = stats.historico.find(h => h.data === stats.dataUltimoAcesso);
-      let nData = getToday();
-      if (acao === 'erro') { stats.totalErros++; hO.erros++; filaEstudo.splice(Math.floor(filaEstudo.length / 2), 0, itemAtual); } 
-      else if (acao === 'chute') { stats.totalAcertos++; hO.acertos++; filaEstudo.splice(Math.floor(filaEstudo.length / 2), 0, itemAtual); } 
-      else if (acao === 'seguranca') { stats.totalAcertos++; hO.acertos++; nData = addDays(7); }
+      verificarDia(); stats.revisadosHoje++; let hO = stats.historico.find(h => h.data === stats.dataUltimoAcesso); let nData = getToday();
+      if (acao === 'erro') { stats.totalErros++; hO.erros++; filaEstudo.splice(Math.floor(filaEstudo.length / 2), 0, itemAtual); } else if (acao === 'chute') { stats.totalAcertos++; hO.acertos++; filaEstudo.splice(Math.floor(filaEstudo.length / 2), 0, itemAtual); } else if (acao === 'seguranca') { stats.totalAcertos++; hO.acertos++; nData = addDays(7); }
       await salvarRevisaoNuvem(itemAtual.id, nData); salvarStatsNuvem(); renderProxItem(); 
     };
 
