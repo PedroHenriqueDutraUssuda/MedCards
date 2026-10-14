@@ -501,6 +501,68 @@
       }
     };
 
+        // --- BACKUP E MIGRAÇÃO PARA NUVEM ---
+    window.exportarBackup = () => {
+      const dataToExport = { pastas: pastas, conteudos: conteudos_base, stats: stats, revisoes: revisoes, exportDate: new Date().toISOString() };
+      const jsonString = JSON.stringify(dataToExport, null, 2); const blob = new Blob([jsonString], { type: "application/json" });
+      const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `medcards_nuvem_${getToday().replace(/-/g, '')}.json`;
+      document.body.appendChild(a); a.click(); setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+    };
+
+    window.importarBackup = async (event) => {
+      if(!isAdmin) return alert("Ative o Modo Administrador para enviar um banco de dados!");
+      const file = event.target.files[0]; if (!file) return; 
+      const reader = new FileReader();
+      
+      reader.onload = async function(e) {
+        try {
+          const importedData = JSON.parse(e.target.result);
+          // O backup antigo guardava em "conteudos", o novo exporta em "conteudos_base"
+          const dadosCards = importedData.conteudos || importedData.conteudos_base;
+          
+          if(importedData.pastas && dadosCards) {
+            if(confirm("MIGRAÇÃO: Deseja enviar todo o conteúdo deste arquivo JSON para a sua Nuvem? (Isto fará o upload de todas as pastas e cartões)")) {
+              
+              alert("A migração vai começar. Clique em OK e aguarde a mensagem de Sucesso (pode demorar alguns segundos). Não feche a página!");
+
+              const batchPromessas = [];
+
+              // 1. Enviar Pastas
+              importedData.pastas.forEach(p => {
+                batchPromessas.push(setDoc(doc(db, "pastas", p.id), { nome: p.nome, parentId: p.parentId }));
+              });
+
+              // 2. Enviar Cartões e Datas de Revisão Pessoal
+              dadosCards.forEach(c => {
+                const obj = { pastaId: c.pastaId, tipo: c.tipo, imagem: c.imagem || "" };
+                if (c.tipo === 'flashcard') { obj.frente = c.frente; obj.verso = c.verso; }
+                else if (c.tipo === 'questao') { obj.enunciado = c.enunciado; obj.comentario = c.comentario; obj.correta = c.correta; obj.alternativas = c.alternativas; }
+                batchPromessas.push(setDoc(doc(db, "conteudos", c.id), obj));
+                
+                // Restaura as datas de revisão que você já tinha no arquivo local
+                if(c.proximaRevisao) {
+                   batchPromessas.push(salvarRevisaoNuvem(c.id, c.proximaRevisao));
+                }
+              });
+
+              // 3. Restaurar Estatísticas e Mapa de Calor
+              if(importedData.stats) {
+                 stats = importedData.stats;
+                 batchPromessas.push(salvarStatsNuvem());
+              }
+
+              await Promise.all(batchPromessas);
+              alert("MIGRAÇÃO CONCLUÍDA! O seu acervo local agora está 100% na Nuvem.");
+              window.location.reload(); // Recarrega a página para puxar os dados novos e exibir na tela
+            }
+          } else { alert("Arquivo JSON inválido ou incompatível."); }
+        } catch (err) { alert("Erro ao ler o arquivo: " + err.message); }
+        event.target.value = ''; // Reseta o input
+      };
+      reader.readAsText(file);
+    };
+
+
     // --- NAVEGAÇÃO E APRESENTAÇÃO ---
     function getIdsSubpastas(folderId) { let ids = [folderId]; pastas.filter(p => p.parentId === folderId).forEach(f => ids = ids.concat(getIdsSubpastas(f.id))); return ids; }
     window.toggleSidebar = (forceCollapse = false) => {
