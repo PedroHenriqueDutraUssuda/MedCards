@@ -36,13 +36,26 @@
       40%, 60% { transform: translate3d(6px, 0, 0); }
     }
 
-    /* Oculta os elementos de edição se não for administrador */
     body:not(.modo-admin) .admin-only { display: none !important; }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 h-[100dvh] w-screen overflow-hidden flex font-sans selection:bg-indigo-500/30">
 
-  <!-- ECRÃ DE LOGIN (SOBREPOSTO) -->
+  <!-- MODAL DE PROGRESSO DE MIGRAÇÃO (NOVIDADE) -->
+  <div id="migrationModal" class="hidden fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[200] flex-col items-center justify-center p-6">
+    <div class="w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl p-8 shadow-2xl text-center">
+      <div class="text-4xl mb-4 animate-bounce">☁️</div>
+      <h3 class="text-xl font-bold text-white mb-2" id="migTitle">Sincronizando com a Nuvem...</h3>
+      <p class="text-slate-400 text-sm mb-6" id="migStatus">Preparando pacotes de dados...</p>
+      <div class="w-full bg-slate-800 rounded-full h-3 mb-4 overflow-hidden border border-slate-700">
+        <div id="migBar" class="bg-gradient-to-r from-indigo-500 to-cyan-400 h-3 rounded-full transition-all duration-300" style="width: 10%"></div>
+      </div>
+      <p id="migError" class="hidden text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 p-3 rounded-lg mt-4 text-left font-mono"></p>
+      <button id="migCloseBtn" onclick="document.getElementById('migrationModal').classList.replace('flex','hidden')" class="hidden mt-6 w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-semibold text-sm">Fechar</button>
+    </div>
+  </div>
+
+  <!-- ECRÃ DE LOGIN -->
   <div id="view-login" class="fixed inset-0 bg-slate-950 z-[100] flex flex-col items-center justify-center p-6">
     <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-600 to-cyan-500 flex items-center justify-center font-bold text-white text-3xl shadow-lg shadow-indigo-500/20 mb-6">MC</div>
     <h1 class="text-3xl font-bold text-white mb-2">MedCards</h1>
@@ -74,14 +87,12 @@
     </div>
     
     <div class="p-4 border-b border-slate-800/80 center-on-collapse flex flex-col gap-2">
-      <!-- PESQUISA GERAL -->
       <div class="relative w-full hide-on-collapse mb-1">
         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
         </div>
         <input type="text" id="inputBusca" onkeyup="window.buscarConteudo()" placeholder="Procurar cartões..." class="w-full bg-slate-950/50 border border-slate-700/80 rounded-lg pl-9 pr-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition">
       </div>
-      <!-- BOTÃO LUPA (Visível apenas quando a barra lateral está fechada) -->
       <button onclick="window.toggleSidebar(false); setTimeout(()=>document.getElementById('inputBusca').focus(), 300)" class="w-full flex items-center justify-center p-2 rounded-lg text-slate-400 hover:bg-slate-800 transition mb-1" style="display: none;" id="btnBuscaColapsado">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
       </button>
@@ -94,7 +105,6 @@
         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
         <span class="hide-on-collapse">Configurações</span>
       </button>
-      <!-- BOTÃO ADMIN ONLY -->
       <button onclick="window.openFolderModal()" class="admin-only w-full flex items-center gap-3 p-2 rounded-lg transition-colors bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium center-on-collapse border border-slate-700 mt-2">
         <span class="text-lg font-bold shrink-0 w-5 text-center">+</span><span class="hide-on-collapse">Nova Pasta</span>
       </button>
@@ -271,11 +281,11 @@
     </div>
   </div>
 
-  <!-- SCRIPT COM FIREBASE MODULE -->
+  <!-- SCRIPT COM FIREBASE MODULE (WRITEBATCH ADICIONADO) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
-    import { getFirestore, collection, doc, getDocs, setDoc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+    import { getFirestore, collection, doc, getDocs, setDoc, deleteDoc, getDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyD74mE1hdNnhvrhfRzqNpQv_XFn5Ad6z58",
@@ -293,7 +303,6 @@
     let currentUser = null;
     let isAdmin = false;
 
-    // Estruturas Locais
     let pastas = [];
     let conteudos_base = []; 
     let revisoes = {}; 
@@ -327,7 +336,7 @@
       document.getElementById('loadingOverlay').classList.remove('hidden'); document.getElementById('loginError').classList.add('hidden');
       signInWithEmailAndPassword(auth, e, p).catch(err => {
         document.getElementById('loadingOverlay').classList.add('hidden');
-        document.getElementById('loginError').textContent = "Falha no login. Verifique as credenciais."; document.getElementById('loginError').classList.remove('hidden');
+        document.getElementById('loginError').textContent = "Falha no login: " + err.message; document.getElementById('loginError').classList.remove('hidden');
       });
     };
     
@@ -337,7 +346,7 @@
       document.getElementById('loadingOverlay').classList.remove('hidden'); document.getElementById('loginError').classList.add('hidden');
       createUserWithEmailAndPassword(auth, e, p).catch(err => {
         document.getElementById('loadingOverlay').classList.add('hidden');
-        document.getElementById('loginError').textContent = "Erro ao criar conta. E-mail pode já estar em uso."; document.getElementById('loginError').classList.remove('hidden');
+        document.getElementById('loginError').textContent = "Erro ao criar conta: " + err.message; document.getElementById('loginError').classList.remove('hidden');
       });
     };
 
@@ -354,7 +363,7 @@
       } else if(p) { alert("Palavra-passe incorreta."); }
     };
 
-    // --- CARREGAMENTO DA NUVEM (CORRIGIDO PARA COMPATIBILIDADE DE IDs) ---
+    // --- CARREGAMENTO DA NUVEM ---
     async function carregarNuvem() {
       try {
         const snapPastas = await getDocs(collection(db, "pastas"));
@@ -362,9 +371,9 @@
         snapPastas.forEach(docSnap => {
           const data = docSnap.data();
           pastas.push({ 
-            id: String(docSnap.id), 
+            id: String(docSnap.id).trim(), 
             nome: data.nome || "Pasta Sem Nome", 
-            parentId: data.parentId ? String(data.parentId) : null 
+            parentId: (data.parentId && String(data.parentId).trim() !== "" && String(data.parentId) !== "null") ? String(data.parentId).trim() : null 
           });
         });
         
@@ -373,9 +382,9 @@
         snapCards.forEach(docSnap => {
           const data = docSnap.data();
           conteudos_base.push({ 
-            id: String(docSnap.id), 
+            id: String(docSnap.id).trim(), 
             ...data,
-            pastaId: data.pastaId ? String(data.pastaId) : null
+            pastaId: data.pastaId ? String(data.pastaId).trim() : null
           });
         });
         
@@ -385,7 +394,7 @@
         const snapRevisoes = await getDocs(collection(db, `usuarios/${currentUser.uid}/revisoes`));
         revisoes = {}; 
         snapRevisoes.forEach(docSnap => { 
-          revisoes[String(docSnap.id)] = docSnap.data().proximaRevisao; 
+          revisoes[String(docSnap.id).trim()] = docSnap.data().proximaRevisao; 
         });
 
         verificarDia(); 
@@ -394,7 +403,7 @@
         renderHeatmap();
       } catch (e) {
         console.error("Erro ao carregar:", e); 
-        alert("Erro ao ligar ao servidor: " + e.message);
+        alert("Erro de permissão ou conexão com o Firebase: " + e.message);
       }
     }
 
@@ -406,7 +415,7 @@
 
     async function salvarRevisaoNuvem(cardId, dataRev) {
       if(!currentUser) return;
-      const idStr = String(cardId);
+      const idStr = String(cardId).trim();
       revisoes[idStr] = dataRev;
       await setDoc(doc(db, `usuarios/${currentUser.uid}/revisoes/${idStr}`), { proximaRevisao: dataRev || null });
     }
@@ -421,7 +430,7 @@
       }
     }
 
-    // --- BACKUP E MIGRAÇÃO PARA NUVEM (BLINDADO CONTRA UNDEFINED E IDs NUMÉRICOS) ---
+    // --- BACKUP E MIGRAÇÃO TURBO EM LOTE (WRITEBATCH) ---
     window.exportarBackup = () => {
       const dataToExport = { pastas: pastas, conteudos: conteudos_base, stats: stats, revisoes: revisoes, exportDate: new Date().toISOString() };
       const jsonString = JSON.stringify(dataToExport, null, 2); const blob = new Blob([jsonString], { type: "application/json" });
@@ -435,84 +444,143 @@
       const reader = new FileReader();
       
       reader.onload = async function(e) {
+        const modal = document.getElementById('migrationModal');
+        const title = document.getElementById('migTitle');
+        const status = document.getElementById('migStatus');
+        const bar = document.getElementById('migBar');
+        const errBox = document.getElementById('migError');
+        const closeBtn = document.getElementById('migCloseBtn');
+
         try {
           const importedData = JSON.parse(e.target.result); 
           const dadosCards = importedData.conteudos || importedData.conteudos_base || [];
           const dadosPastas = importedData.pastas || [];
           
-          if(dadosPastas.length > 0 || dadosCards.length > 0) {
-            if(confirm(`MIGRAÇÃO: Encontradas ${dadosPastas.length} pastas e ${dadosCards.length} cartões/questões. Deseja enviar tudo para a Nuvem?`)) {
-              
-              alert("Enviando dados... Clique em OK e aguarde a confirmação final.");
-              let pastasSalvas = 0;
-              let cardsSalvos = 0;
-
-              // 1. Salvar Pastas garantindo que IDs sejam Texto (String)
-              for (const p of dadosPastas) {
-                if (!p || !p.id) continue;
-                const idPasta = String(p.id);
-                const parentId = p.parentId ? String(p.parentId) : null;
-                await setDoc(doc(db, "pastas", idPasta), { 
-                  nome: String(p.nome || "Pasta"), 
-                  parentId: parentId 
-                });
-                pastasSalvas++;
-              }
-
-              // 2. Salvar Cartões e Questões limpando qualquer campo 'undefined'
-              for (let i = 0; i < dadosCards.length; i++) {
-                const c = dadosCards[i];
-                if (!c) continue;
-                
-                const idCard = c.id ? String(c.id) : ('c_' + Date.now() + '_' + i);
-                const pastaIdStr = c.pastaId ? String(c.pastaId) : null;
-                
-                const obj = { 
-                  pastaId: pastaIdStr, 
-                  tipo: c.tipo || (c.enunciado ? 'questao' : 'flashcard'), 
-                  imagem: c.imagem ? String(c.imagem) : "" 
-                };
-
-                if (obj.tipo === 'flashcard') { 
-                  obj.frente = c.frente ? String(c.frente) : "Sem pergunta"; 
-                  obj.verso = c.verso ? String(c.verso) : "Sem resposta"; 
-                } else if (obj.tipo === 'questao') { 
-                  obj.enunciado = c.enunciado ? String(c.enunciado) : "Sem enunciado"; 
-                  obj.comentario = c.comentario ? String(c.comentario) : ""; 
-                  obj.correta = (c.correta !== undefined && c.correta !== null) ? Number(c.correta) : 0; 
-                  obj.alternativas = Array.isArray(c.alternativas) ? c.alternativas.map(a => String(a || "")) : ["A", "B", "C", "D", "E"]; 
-                }
-
-                await setDoc(doc(db, "conteudos", idCard), obj);
-                cardsSalvos++;
-                
-                if(c.proximaRevisao) { 
-                  await salvarRevisaoNuvem(idCard, String(c.proximaRevisao)); 
-                }
-              }
-
-              // 3. Salvar Estatísticas
-              if(importedData.stats) { 
-                stats = {
-                  totalAcertos: Number(importedData.stats.totalAcertos || 0),
-                  totalErros: Number(importedData.stats.totalErros || 0),
-                  revisadosHoje: Number(importedData.stats.revisadosHoje || 0),
-                  dataUltimoAcesso: String(importedData.stats.dataUltimoAcesso || getToday()),
-                  metaDiaria: Number(importedData.stats.metaDiaria || 50),
-                  historico: Array.isArray(importedData.stats.historico) ? importedData.stats.historico : [{ data: getToday(), acertos: 0, erros: 0 }]
-                };
-                await salvarStatsNuvem(); 
-              }
-
-              alert(`SUCESSO! Foram gravadas ${pastasSalvas} pastas e ${cardsSalvos} questões/cartões na nuvem!`); 
-              window.location.reload(); 
-            }
-          } else { 
-            alert("Não foram encontradas pastas ou cartões válidos dentro deste arquivo JSON."); 
+          if(dadosPastas.length === 0 && dadosCards.length === 0) {
+            return alert("Não foram encontradas pastas ou cartões válidos neste arquivo JSON.");
           }
+
+          if(!confirm(`MIGRAÇÃO TURBO: Encontradas ${dadosPastas.length} pastas e ${dadosCards.length} questões/flashcards. Iniciar envio imediato?`)) {
+            event.target.value = ''; return;
+          }
+
+          // Abre o painel de progresso ao vivo
+          errBox.classList.add('hidden'); closeBtn.classList.add('hidden');
+          title.textContent = "Enviando para o Firebase...";
+          status.textContent = "Empacotando pastas e cartões...";
+          bar.style.width = "15%";
+          modal.classList.replace('hidden', 'flex');
+
+          // Criamos uma fila de operações para enviar em pacotes de 400 (limite do Firebase é 500 por pacote)
+          const operacoes = [];
+          const mapaNomesPastas = {};
+
+          // 1. Preparar Pastas
+          dadosPastas.forEach(p => {
+            if (!p || (p.id === undefined && !p.nome)) return;
+            const idPasta = String(p.id !== undefined ? p.id : ('p_' + Date.now() + Math.random())).trim();
+            const parentId = (p.parentId !== undefined && p.parentId !== null && String(p.parentId).trim() !== "" && String(p.parentId) !== "null") ? String(p.parentId).trim() : null;
+            const nomePasta = String(p.nome || "Pasta").trim();
+            
+            mapaNomesPastas[nomePasta.toLowerCase()] = idPasta;
+            operacoes.push({
+              ref: doc(db, "pastas", idPasta),
+              data: { nome: nomePasta, parentId: parentId }
+            });
+          });
+
+          // 2. Preparar Cartões e Questões
+          dadosCards.forEach((c, i) => {
+            if (!c) return;
+            const idCard = c.id ? String(c.id).trim() : ('c_' + Date.now() + '_' + i);
+            let pastaIdStr = (c.pastaId !== undefined && c.pastaId !== null) ? String(c.pastaId).trim() : null;
+
+            // Se por acaso o JSON antigo guardou o nome da pasta em vez do ID, faz a ponte
+            if (pastaIdStr && !dadosPastas.some(p => String(p.id).trim() === pastaIdStr) && mapaNomesPastas[pastaIdStr.toLowerCase()]) {
+              pastaIdStr = mapaNomesPastas[pastaIdStr.toLowerCase()];
+            }
+
+            const isQuestao = (c.tipo === 'questao') || Boolean(c.enunciado) || Array.isArray(c.alternativas);
+            const tipoFinal = isQuestao ? 'questao' : 'flashcard';
+
+            const obj = { 
+              pastaId: pastaIdStr, 
+              tipo: tipoFinal, 
+              imagem: c.imagem ? String(c.imagem) : "" 
+            };
+
+            if (tipoFinal === 'flashcard') { 
+              obj.frente = String(c.frente || c.pergunta || "Sem pergunta"); 
+              obj.verso = String(c.verso || c.resposta || "Sem resposta"); 
+            } else { 
+              obj.enunciado = String(c.enunciado || c.frente || "Sem enunciado"); 
+              obj.comentario = String(c.comentario || c.verso || ""); 
+              obj.correta = (c.correta !== undefined && c.correta !== null && !isNaN(Number(c.correta))) ? Number(c.correta) : 0; 
+              obj.alternativas = Array.isArray(c.alternativas) ? c.alternativas.map(a => String(a ?? "")) : ["A", "B", "C", "D", "E"]; 
+            }
+
+            operacoes.push({
+              ref: doc(db, "conteudos", idCard),
+              data: obj
+            });
+
+            if (c.proximaRevisao && currentUser) {
+              operacoes.push({
+                ref: doc(db, `usuarios/${currentUser.uid}/revisoes/${idCard}`),
+                data: { proximaRevisao: String(c.proximaRevisao) }
+              });
+            }
+          });
+
+          // 3. Preparar Estatísticas
+          if(importedData.stats && currentUser) { 
+            const safeStats = {
+              totalAcertos: Number(importedData.stats.totalAcertos || 0),
+              totalErros: Number(importedData.stats.totalErros || 0),
+              revisadosHoje: Number(importedData.stats.revisadosHoje || 0),
+              dataUltimoAcesso: String(importedData.stats.dataUltimoAcesso || getToday()),
+              metaDiaria: Number(importedData.stats.metaDiaria || 50),
+              historico: Array.isArray(importedData.stats.historico) ? importedData.stats.historico.map(h => ({
+                data: String(h.data || getToday()),
+                acertos: Number(h.acertos || 0),
+                erros: Number(h.erros || 0)
+              })) : [{ data: getToday(), acertos: 0, erros: 0 }]
+            };
+            operacoes.push({
+              ref: doc(db, `usuarios/${currentUser.uid}/dados/estatisticas`),
+              data: safeStats
+            });
+          }
+
+          // 4. Disparar Lotes (Chunks de 400 operações)
+          const tamanhoLote = 400;
+          for (let i = 0; i < operacoes.length; i += tamanhoLote) {
+            const fatia = operacoes.slice(i, i + tamanhoLote);
+            const batch = writeBatch(db);
+            fatia.forEach(op => batch.set(op.ref, op.data));
+            
+            status.textContent = `Gravando lote ${Math.floor(i/tamanhoLote) + 1} de ${Math.ceil(operacoes.length/tamanhoLote)} (${Math.min(i + tamanhoLote, operacoes.length)}/${operacoes.length} itens)...`;
+            await batch.commit();
+            
+            const progresso = Math.round(((i + fatia.length) / operacoes.length) * 100);
+            bar.style.width = `${progresso}%`;
+          }
+
+          // Atualiza a tela imediatamente sem depender apenas do reload de cache
+          await carregarNuvem();
+
+          title.textContent = "✅ Migração Concluída!";
+          status.textContent = `Foram gravadas ${dadosPastas.length} pastas e ${dadosCards.length} questões/cartões com sucesso!`;
+          bar.style.width = "100%";
+          closeBtn.classList.remove('hidden');
+
         } catch (err) { 
           console.error("Erro detalhado na importação:", err);
-          alert("Erro durante a migração: " + err.message); 
+          title.textContent = "❌ Falha na Gravação";
+          status.textContent = "O Firebase recusou ou interrompeu o envio. Veja o motivo técnico abaixo:";
+          errBox.textContent = `${err.code || 'Erro'}: ${err.message}`;
+          errBox.classList.remove('hidden');
+          closeBtn.classList.remove('hidden');
         }
         event.target.value = ''; 
       };
@@ -657,7 +725,6 @@
       if(!isAdmin) return alert("Modo administrador necessário.");
       const tipo = document.getElementById('inputType').value;
       
-      // IMPORTAÇÃO EM LOTE DENTRO DA PASTA (BLINDADA)
       if (tipo === 'lote' && !editandoId) {
         let jsonString = document.getElementById('inputJSON').value.trim(); if(!jsonString) return;
         try {
@@ -665,12 +732,14 @@
           const parsed = JSON.parse(jsonString.trim());
           const dados = Array.isArray(parsed) ? parsed : (parsed.conteudos || parsed.questoes || [parsed]);
           let salvos = 0;
+          const batch = writeBatch(db);
 
           for(let index=0; index<dados.length; index++) {
             const item = dados[index]; if (!item) continue;
             const tempId = 'c_' + Date.now() + '_' + index;
-            const pastaAlvo = String(pastaAtivaId);
-            const itemTipo = item.tipo || (item.enunciado ? 'questao' : 'flashcard');
+            const pastaAlvo = String(pastaAtivaId).trim();
+            const isQuestao = (item.tipo === 'questao') || Boolean(item.enunciado) || Array.isArray(item.alternativas);
+            const itemTipo = isQuestao ? 'questao' : 'flashcard';
 
             if (itemTipo === 'flashcard' && (item.frente || item.verso)) { 
               const obj = { 
@@ -681,39 +750,40 @@
                 imagem: item.imagem ? String(item.imagem) : "" 
               }; 
               conteudos_base.push({ id: tempId, ...obj }); 
-              await setDoc(doc(db, "conteudos", tempId), obj); 
+              batch.set(doc(db, "conteudos", tempId), obj); 
               salvos++;
             } 
-            else if (itemTipo === 'questao' && item.enunciado) { 
+            else if (itemTipo === 'questao' && (item.enunciado || item.frente)) { 
               const obj = { 
                 pastaId: pastaAlvo, 
                 tipo: 'questao', 
-                enunciado: String(item.enunciado), 
-                alternativas: Array.isArray(item.alternativas) ? item.alternativas.map(a => String(a || "")) : ["A", "B", "C", "D", "E"], 
+                enunciado: String(item.enunciado || item.frente), 
+                alternativas: Array.isArray(item.alternativas) ? item.alternativas.map(a => String(a ?? "")) : ["A", "B", "C", "D", "E"], 
                 correta: (item.correta !== undefined && item.correta !== null) ? parseInt(item.correta) || 0 : 0, 
                 comentario: item.comentario ? String(item.comentario) : "", 
                 imagem: item.imagem ? String(item.imagem) : "" 
               }; 
               conteudos_base.push({ id: tempId, ...obj }); 
-              await setDoc(doc(db, "conteudos", tempId), obj); 
+              batch.set(doc(db, "conteudos", tempId), obj); 
               salvos++;
             }
           }
-          window.closeContentModal(); window.selectFolder(pastaAtivaId); alert(`Lote guardado na nuvem! (${salvos} itens adicionados)`); return;
-        } catch(e) { return alert("Erro no JSON: " + e.message); }
+          await batch.commit();
+          window.closeContentModal(); renderFolders(); window.selectFolder(pastaAtivaId); alert(`Lote guardado na nuvem! (${salvos} itens adicionados)`); return;
+        } catch(e) { return alert("Erro ao salvar lote: " + e.message); }
       }
 
-      const pastaAlvo = String(pastaAtivaId || conteudos_base.find(c=>String(c.id)===String(editandoId)).pastaId);
+      const pastaAlvo = String(pastaAtivaId || conteudos_base.find(c=>String(c.id)===String(editandoId)).pastaId).trim();
       let obj = { pastaId: pastaAlvo, tipo: tipo, imagem: document.getElementById('inputImagem').value.trim() };
       if (tipo === 'flashcard') { obj.frente = document.getElementById('inputFrente').value.trim(); obj.verso = document.getElementById('inputVerso').value.trim(); } 
       else if (tipo === 'questao') { obj.enunciado = document.getElementById('inputEnunciado').value.trim(); obj.comentario = document.getElementById('inputComentario').value.trim(); obj.correta = parseInt(document.getElementById('inputCorreta').value) || 0; obj.alternativas = [ document.getElementById('alt0').value.trim(), document.getElementById('alt1').value.trim(), document.getElementById('alt2').value.trim(), document.getElementById('alt3').value.trim(), document.getElementById('alt4').value.trim() ]; }
 
-      const finalId = String(editandoId || ('c_' + Date.now()));
+      const finalId = String(editandoId || ('c_' + Date.now())).trim();
       if(editandoId) { const idx = conteudos_base.findIndex(c=>String(c.id)===finalId); if(idx>-1) conteudos_base[idx] = {id: finalId, ...obj}; } 
       else { conteudos_base.push({id: finalId, ...obj}); }
       
       await setDoc(doc(db, "conteudos", finalId), obj);
-      window.closeContentModal(); 
+      window.closeContentModal(); renderFolders();
       
       if (document.getElementById('view-pesquisa').classList.contains('flex')) { window.buscarConteudo(); } 
       else if (pastaAtivaId) { window.selectFolder(pastaAtivaId); }
@@ -730,16 +800,16 @@
     window.deletarConteudo = async (id) => {
       if(!isAdmin) return; const idStr = String(id);
       if(confirm("Apagar da nuvem para TODOS os utilizadores?")) {
-        conteudos_base = conteudos_base.filter(c => String(c.id) !== idStr); await deleteDoc(doc(db, "conteudos", idStr)); 
+        conteudos_base = conteudos_base.filter(c => String(c.id) !== idStr); await deleteDoc(doc(db, "conteudos", idStr)); renderFolders();
         if (document.getElementById('view-pesquisa').classList.contains('flex')) { window.buscarConteudo(); } 
         else if (pastaAtivaId) { window.selectFolder(pastaAtivaId); }
       }
     };
 
     function getIdsSubpastas(folderId) { 
-      const targetStr = String(folderId);
+      const targetStr = String(folderId).trim();
       let ids = [targetStr]; 
-      pastas.filter(p => String(p.parentId) === targetStr).forEach(f => ids = ids.concat(getIdsSubpastas(f.id))); 
+      pastas.filter(p => String(p.parentId).trim() === targetStr).forEach(f => ids = ids.concat(getIdsSubpastas(f.id))); 
       return ids; 
     }
     
@@ -751,19 +821,19 @@
       renderFolders();
     };
     
-    window.togglePastaExpandida = (event, id) => { event.stopPropagation(); const idStr = String(id); if(pastasFechadas.has(idStr)) pastasFechadas.delete(idStr); else pastasFechadas.add(idStr); renderFolders(); };
+    window.togglePastaExpandida = (event, id) => { event.stopPropagation(); const idStr = String(id).trim(); if(pastasFechadas.has(idStr)) pastasFechadas.delete(idStr); else pastasFechadas.add(idStr); renderFolders(); };
 
     function renderFolders() {
       const container = document.getElementById('folderTreeContainer'); container.innerHTML = '';
       function buildTree(parentId, depth = 0) {
-        const children = pastas.filter(p => (parentId === null ? !p.parentId : String(p.parentId) === String(parentId))).sort((a, b) => a.nome.localeCompare(b.nome));
+        const children = pastas.filter(p => (parentId === null ? !p.parentId : String(p.parentId).trim() === String(parentId).trim())).sort((a, b) => a.nome.localeCompare(b.nome));
         children.forEach(folder => {
-          const folderIdStr = String(folder.id);
-          const isSelected = String(pastaAtivaId) === folderIdStr; 
+          const folderIdStr = String(folder.id).trim();
+          const isSelected = String(pastaAtivaId).trim() === folderIdStr; 
           const subIds = getIdsSubpastas(folderIdStr);
-          const totalItens = conteudos_base.filter(c => subIds.includes(String(c.pastaId))).length;
+          const totalItens = conteudos_base.filter(c => subIds.includes(String(c.pastaId).trim())).length;
           const paddingLeft = sidebarCollapsed ? 0 : (depth * 16) + 8; 
-          const hasChildren = pastas.some(p => String(p.parentId) === folderIdStr); 
+          const hasChildren = pastas.some(p => String(p.parentId).trim() === folderIdStr); 
           const isClosed = pastasFechadas.has(folderIdStr);
           const div = document.createElement('div');
           div.className = `group flex items-center justify-between w-full py-2 rounded-lg text-sm cursor-pointer transition-colors mb-1 center-on-collapse ${sidebarCollapsed ? 'justify-center' : 'pr-3'} ${isSelected ? 'bg-indigo-500/10 text-indigo-400 font-medium border border-indigo-500/20' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-transparent'}`;
@@ -784,20 +854,21 @@
     window.showConfig = () => { pastaAtivaId = null; document.getElementById('inputBusca').value = ''; renderFolders(); resetSidebarButtons(); document.getElementById('btnConfig').className = "w-full flex items-center gap-3 p-2 rounded-lg transition-colors bg-indigo-500/10 text-indigo-400 font-medium border border-indigo-500/20 center-on-collapse"; ['view-dashboard', 'view-study', 'view-desempenho', 'view-pesquisa'].forEach(v => document.getElementById(v).classList.replace('flex', 'hidden')); document.getElementById('view-config').classList.replace('hidden', 'flex'); };
 
     window.selectFolder = (id) => {
-      pastaAtivaId = String(id); document.getElementById('inputBusca').value = ''; resetSidebarButtons(); renderFolders();
-      const pIds = getIdsSubpastas(pastaAtivaId); const merged = conteudos_base.map(getMergedCard).filter(c => pIds.includes(String(c.pastaId)));
+      pastaAtivaId = String(id).trim(); document.getElementById('inputBusca').value = ''; resetSidebarButtons(); renderFolders();
+      const pIds = getIdsSubpastas(pastaAtivaId); const merged = conteudos_base.map(getMergedCard).filter(c => pIds.includes(String(c.pastaId).trim()));
       
       const pendQ = merged.filter(c => c.tipo === 'questao' && isCardDue(c)).length;
       const pendF = merged.filter(c => c.tipo === 'flashcard' && isCardDue(c)).length;
       
-      const pastaObj = pastas.find(p => String(p.id) === pastaAtivaId);
+      const pastaObj = pastas.find(p => String(p.id).trim() === pastaAtivaId);
       document.getElementById('dashFolderTitle').textContent = pastaObj ? pastaObj.nome : "Pasta";
       document.getElementById('dashCountQuestoes').textContent = pendQ; document.getElementById('dashCountFlashcards').textContent = pendF;
       document.getElementById('badgeQuestao').className = pendQ > 0 ? "mt-4 bg-indigo-500/10 text-indigo-400 px-4 py-1.5 rounded-full text-sm font-bold border border-indigo-500/30" : "mt-4 bg-slate-500/10 text-slate-400 px-4 py-1.5 rounded-full text-sm font-medium border border-slate-500/20"; 
       document.getElementById('badgeFlashcard').className = pendF > 0 ? "mt-4 bg-cyan-500/10 text-cyan-400 px-4 py-1.5 rounded-full text-sm font-bold border border-cyan-500/30" : "mt-4 bg-slate-500/10 text-slate-400 px-4 py-1.5 rounded-full text-sm font-medium border border-slate-500/20"; 
 
       const cont = document.getElementById('listaConteudoPasta'); cont.innerHTML = '';
-      const dirItens = merged.filter(c => String(c.pastaId) === pastaAtivaId);
+      // Exibe todos os itens da pasta e subpastas na listagem para facilitar conferência
+      const dirItens = merged;
       document.getElementById('dashManageCount').textContent = `${dirItens.length} itens`;
       if (dirItens.length === 0) cont.innerHTML = '<p class="text-sm text-slate-500 py-4 text-center">Vazio.</p>';
       dirItens.forEach(item => {
@@ -810,7 +881,7 @@
     };
 
     window.resetarPasta = async () => {
-      if(!pastaAtivaId) return; const pIds = getIdsSubpastas(pastaAtivaId); const m = conteudos_base.filter(c => pIds.includes(String(c.pastaId)));
+      if(!pastaAtivaId) return; const pIds = getIdsSubpastas(pastaAtivaId); const m = conteudos_base.filter(c => pIds.includes(String(c.pastaId).trim()));
       if(m.length === 0) return;
       if(confirm("Apagar as revisões futuras (pessoais) desta pasta?")) {
         for(let c of m) { await salvarRevisaoNuvem(c.id, null); }
@@ -819,7 +890,7 @@
     };
 
     window.startStudyMode = (tipo) => {
-      const pIds = getIdsSubpastas(pastaAtivaId); filaEstudo = conteudos_base.map(getMergedCard).filter(c => c.tipo === tipo && pIds.includes(String(c.pastaId)) && isCardDue(c));
+      const pIds = getIdsSubpastas(pastaAtivaId); filaEstudo = conteudos_base.map(getMergedCard).filter(c => c.tipo === tipo && pIds.includes(String(c.pastaId).trim()) && isCardDue(c));
       if(filaEstudo.length === 0) return alert('Não há cartões pendentes hoje.');
       filaEstudo.sort(() => Math.random() - 0.5); document.getElementById('sidebar').style.display = 'none'; document.getElementById('view-dashboard').classList.replace('flex', 'hidden'); document.getElementById('view-study').classList.replace('hidden', 'flex'); renderProxItem();
     };
