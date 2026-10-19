@@ -74,7 +74,7 @@
     </div>
     
     <div class="p-4 border-b border-slate-800/80 center-on-collapse flex flex-col gap-2">
-      <!-- PESQUISA GERAL (NOVIDADE) -->
+      <!-- PESQUISA GERAL -->
       <div class="relative w-full hide-on-collapse mb-1">
         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
@@ -225,7 +225,7 @@
       </div>
     </div>
 
-    <!-- VISÃO 5: RESULTADOS DA PESQUISA (NOVIDADE) -->
+    <!-- VISÃO 5: RESULTADOS DA PESQUISA -->
     <div id="view-pesquisa" class="hidden absolute inset-0 flex-col overflow-y-auto z-10 bg-[#090E17]">
       <header class="h-20 border-b border-slate-800/60 px-6 md:px-10 flex items-center shrink-0 bg-slate-900/40 backdrop-blur-md sticky top-0">
         <div class="flex items-center gap-3">
@@ -304,7 +304,7 @@
     function formatBR(dateStr) { if(!dateStr) return ''; const p = dateStr.split('-'); return `${p[2]}/${p[1]}`; }
     
     function getMergedCard(card) {
-      const proximaRevisao = revisoes[card.id] || null;
+      const proximaRevisao = revisoes[String(card.id)] || null;
       return { ...card, proximaRevisao };
     }
     function isCardDue(item) { if (!item.proximaRevisao) return true; return item.proximaRevisao <= getToday(); }
@@ -354,24 +354,47 @@
       } else if(p) { alert("Palavra-passe incorreta."); }
     };
 
-    // --- CARREGAMENTO DA NUVEM ---
+    // --- CARREGAMENTO DA NUVEM (CORRIGIDO PARA COMPATIBILIDADE DE IDs) ---
     async function carregarNuvem() {
       try {
         const snapPastas = await getDocs(collection(db, "pastas"));
-        pastas = []; snapPastas.forEach(doc => pastas.push({ id: doc.id, ...doc.data() }));
+        pastas = []; 
+        snapPastas.forEach(docSnap => {
+          const data = docSnap.data();
+          pastas.push({ 
+            id: String(docSnap.id), 
+            nome: data.nome || "Pasta Sem Nome", 
+            parentId: data.parentId ? String(data.parentId) : null 
+          });
+        });
         
         const snapCards = await getDocs(collection(db, "conteudos"));
-        conteudos_base = []; snapCards.forEach(doc => conteudos_base.push({ id: doc.id, ...doc.data() }));
+        conteudos_base = []; 
+        snapCards.forEach(docSnap => {
+          const data = docSnap.data();
+          conteudos_base.push({ 
+            id: String(docSnap.id), 
+            ...data,
+            pastaId: data.pastaId ? String(data.pastaId) : null
+          });
+        });
         
         const userStatsDoc = await getDoc(doc(db, `usuarios/${currentUser.uid}/dados/estatisticas`));
         if (userStatsDoc.exists()) { stats = userStatsDoc.data(); }
         
         const snapRevisoes = await getDocs(collection(db, `usuarios/${currentUser.uid}/revisoes`));
-        revisoes = {}; snapRevisoes.forEach(doc => { revisoes[doc.id] = doc.data().proximaRevisao; });
+        revisoes = {}; 
+        snapRevisoes.forEach(docSnap => { 
+          revisoes[String(docSnap.id)] = docSnap.data().proximaRevisao; 
+        });
 
-        verificarDia(); renderFolders(); updateDesempenhoStats(); renderHeatmap();
+        verificarDia(); 
+        renderFolders(); 
+        updateDesempenhoStats(); 
+        renderHeatmap();
       } catch (e) {
-        console.error("Erro a carregar:", e); alert("Erro ao ligar ao servidor.");
+        console.error("Erro ao carregar:", e); 
+        alert("Erro ao ligar ao servidor: " + e.message);
       }
     }
 
@@ -383,12 +406,14 @@
 
     async function salvarRevisaoNuvem(cardId, dataRev) {
       if(!currentUser) return;
-      revisoes[cardId] = dataRev;
-      await setDoc(doc(db, `usuarios/${currentUser.uid}/revisoes/${cardId}`), { proximaRevisao: dataRev });
+      const idStr = String(cardId);
+      revisoes[idStr] = dataRev;
+      await setDoc(doc(db, `usuarios/${currentUser.uid}/revisoes/${idStr}`), { proximaRevisao: dataRev || null });
     }
 
     function verificarDia() {
       const hoje = getToday();
+      if (!stats.historico) stats.historico = [{ data: hoje, acertos: 0, erros: 0 }];
       if (stats.dataUltimoAcesso !== hoje) {
         stats.revisadosHoje = 0; stats.dataUltimoAcesso = hoje; stats.historico.push({ data: hoje, acertos: 0, erros: 0 });
         if (stats.historico.length > 90) stats.historico.shift(); 
@@ -396,6 +421,7 @@
       }
     }
 
+    // --- BACKUP E MIGRAÇÃO PARA NUVEM (BLINDADO CONTRA UNDEFINED E IDs NUMÉRICOS) ---
     window.exportarBackup = () => {
       const dataToExport = { pastas: pastas, conteudos: conteudos_base, stats: stats, revisoes: revisoes, exportDate: new Date().toISOString() };
       const jsonString = JSON.stringify(dataToExport, null, 2); const blob = new Blob([jsonString], { type: "application/json" });
@@ -405,26 +431,89 @@
 
     window.importarBackup = async (event) => {
       if(!isAdmin) return alert("Ative o Modo Administrador para enviar um banco de dados!");
-      const file = event.target.files[0]; if (!file) return; const reader = new FileReader();
+      const file = event.target.files[0]; if (!file) return; 
+      const reader = new FileReader();
+      
       reader.onload = async function(e) {
         try {
-          const importedData = JSON.parse(e.target.result); const dadosCards = importedData.conteudos || importedData.conteudos_base;
-          if(importedData.pastas && dadosCards) {
-            if(confirm("MIGRAÇÃO: Deseja enviar todo o conteúdo deste arquivo JSON para a sua Nuvem?")) {
-              alert("A migração vai começar. Clique em OK e aguarde a mensagem de Sucesso.");
-              const batchPromessas = [];
-              importedData.pastas.forEach(p => { batchPromessas.push(setDoc(doc(db, "pastas", p.id), { nome: p.nome, parentId: p.parentId })); });
-              dadosCards.forEach(c => {
-                const obj = { pastaId: c.pastaId, tipo: c.tipo, imagem: c.imagem || "" };
-                if (c.tipo === 'flashcard') { obj.frente = c.frente; obj.verso = c.verso; } else if (c.tipo === 'questao') { obj.enunciado = c.enunciado; obj.comentario = c.comentario; obj.correta = c.correta; obj.alternativas = c.alternativas; }
-                batchPromessas.push(setDoc(doc(db, "conteudos", c.id), obj));
-                if(c.proximaRevisao) { batchPromessas.push(salvarRevisaoNuvem(c.id, c.proximaRevisao)); }
-              });
-              if(importedData.stats) { stats = importedData.stats; batchPromessas.push(salvarStatsNuvem()); }
-              await Promise.all(batchPromessas); alert("MIGRAÇÃO CONCLUÍDA! O seu acervo local agora está 100% na Nuvem."); window.location.reload(); 
+          const importedData = JSON.parse(e.target.result); 
+          const dadosCards = importedData.conteudos || importedData.conteudos_base || [];
+          const dadosPastas = importedData.pastas || [];
+          
+          if(dadosPastas.length > 0 || dadosCards.length > 0) {
+            if(confirm(`MIGRAÇÃO: Encontradas ${dadosPastas.length} pastas e ${dadosCards.length} cartões/questões. Deseja enviar tudo para a Nuvem?`)) {
+              
+              alert("Enviando dados... Clique em OK e aguarde a confirmação final.");
+              let pastasSalvas = 0;
+              let cardsSalvos = 0;
+
+              // 1. Salvar Pastas garantindo que IDs sejam Texto (String)
+              for (const p of dadosPastas) {
+                if (!p || !p.id) continue;
+                const idPasta = String(p.id);
+                const parentId = p.parentId ? String(p.parentId) : null;
+                await setDoc(doc(db, "pastas", idPasta), { 
+                  nome: String(p.nome || "Pasta"), 
+                  parentId: parentId 
+                });
+                pastasSalvas++;
+              }
+
+              // 2. Salvar Cartões e Questões limpando qualquer campo 'undefined'
+              for (let i = 0; i < dadosCards.length; i++) {
+                const c = dadosCards[i];
+                if (!c) continue;
+                
+                const idCard = c.id ? String(c.id) : ('c_' + Date.now() + '_' + i);
+                const pastaIdStr = c.pastaId ? String(c.pastaId) : null;
+                
+                const obj = { 
+                  pastaId: pastaIdStr, 
+                  tipo: c.tipo || (c.enunciado ? 'questao' : 'flashcard'), 
+                  imagem: c.imagem ? String(c.imagem) : "" 
+                };
+
+                if (obj.tipo === 'flashcard') { 
+                  obj.frente = c.frente ? String(c.frente) : "Sem pergunta"; 
+                  obj.verso = c.verso ? String(c.verso) : "Sem resposta"; 
+                } else if (obj.tipo === 'questao') { 
+                  obj.enunciado = c.enunciado ? String(c.enunciado) : "Sem enunciado"; 
+                  obj.comentario = c.comentario ? String(c.comentario) : ""; 
+                  obj.correta = (c.correta !== undefined && c.correta !== null) ? Number(c.correta) : 0; 
+                  obj.alternativas = Array.isArray(c.alternativas) ? c.alternativas.map(a => String(a || "")) : ["A", "B", "C", "D", "E"]; 
+                }
+
+                await setDoc(doc(db, "conteudos", idCard), obj);
+                cardsSalvos++;
+                
+                if(c.proximaRevisao) { 
+                  await salvarRevisaoNuvem(idCard, String(c.proximaRevisao)); 
+                }
+              }
+
+              // 3. Salvar Estatísticas
+              if(importedData.stats) { 
+                stats = {
+                  totalAcertos: Number(importedData.stats.totalAcertos || 0),
+                  totalErros: Number(importedData.stats.totalErros || 0),
+                  revisadosHoje: Number(importedData.stats.revisadosHoje || 0),
+                  dataUltimoAcesso: String(importedData.stats.dataUltimoAcesso || getToday()),
+                  metaDiaria: Number(importedData.stats.metaDiaria || 50),
+                  historico: Array.isArray(importedData.stats.historico) ? importedData.stats.historico : [{ data: getToday(), acertos: 0, erros: 0 }]
+                };
+                await salvarStatsNuvem(); 
+              }
+
+              alert(`SUCESSO! Foram gravadas ${pastasSalvas} pastas e ${cardsSalvos} questões/cartões na nuvem!`); 
+              window.location.reload(); 
             }
-          } else { alert("Arquivo JSON inválido ou incompatível."); }
-        } catch (err) { alert("Erro ao ler o arquivo: " + err.message); }
+          } else { 
+            alert("Não foram encontradas pastas ou cartões válidos dentro deste arquivo JSON."); 
+          }
+        } catch (err) { 
+          console.error("Erro detalhado na importação:", err);
+          alert("Erro durante a migração: " + err.message); 
+        }
         event.target.value = ''; 
       };
       reader.readAsText(file);
@@ -457,7 +546,7 @@
       container.innerHTML = `<div class="grid grid-rows-7 grid-flow-col gap-1.5 custom-scroll-x">${html}</div>`;
     }
 
-    /* MÓDULO: PESQUISA GLOBAL (NOVIDADE) */
+    /* MÓDULO: PESQUISA GLOBAL */
     window.buscarConteudo = () => {
       const termo = document.getElementById('inputBusca').value.toLowerCase().trim();
       if(termo.length < 2) {
@@ -473,7 +562,7 @@
       const cont = document.getElementById('listaResultadosBusca'); cont.innerHTML = '';
       
       const resultados = conteudos_base.filter(c => {
-        const texto = c.tipo === 'flashcard' ? (c.frente + " " + c.verso).toLowerCase() : (c.enunciado + " " + c.comentario + " " + (c.alternativas ? c.alternativas.join(" ") : "")).toLowerCase();
+        const texto = c.tipo === 'flashcard' ? ((c.frente || "") + " " + (c.verso || "")).toLowerCase() : ((c.enunciado || "") + " " + (c.comentario || "") + " " + (c.alternativas ? c.alternativas.join(" ") : "")).toLowerCase();
         return texto.includes(termo);
       });
       
@@ -487,7 +576,7 @@
         if (merged.proximaRevisao && merged.proximaRevisao <= getToday()) { revText = 'HOJE'; revCol = 'text-rose-400 bg-rose-500/10 border-rose-500/20'; } 
         else if (merged.proximaRevisao) { revText = `REV: ${formatBR(merged.proximaRevisao)}`; revCol = 'text-slate-400 bg-slate-700/30 border-slate-600/30'; }
         
-        const pasta = pastas.find(p => p.id === item.pastaId); const nomePasta = pasta ? pasta.nome : 'Sem pasta';
+        const pasta = pastas.find(p => String(p.id) === String(item.pastaId)); const nomePasta = pasta ? pasta.nome : 'Sem pasta';
 
         cont.innerHTML += `
           <div class="bg-slate-800/40 border border-slate-700/60 p-4 rounded-xl flex items-center justify-between gap-4 transition hover:border-indigo-500/50">
@@ -523,28 +612,28 @@
     };
 
     window.renomearPastaAtiva = async () => {
-      if(!isAdmin) return; const pasta = pastas.find(p => p.id === pastaAtivaId); const novoNome = prompt("Novo nome:", pasta.nome);
-      if(novoNome && novoNome.trim() !== "") { pasta.nome = novoNome.trim(); await setDoc(doc(db, "pastas", pasta.id), { nome: pasta.nome, parentId: pasta.parentId }); renderFolders(); window.selectFolder(pastaAtivaId); }
+      if(!isAdmin) return; const pasta = pastas.find(p => String(p.id) === String(pastaAtivaId)); const novoNome = prompt("Novo nome:", pasta.nome);
+      if(novoNome && novoNome.trim() !== "") { pasta.nome = novoNome.trim(); await setDoc(doc(db, "pastas", String(pasta.id)), { nome: pasta.nome, parentId: pasta.parentId }); renderFolders(); window.selectFolder(pastaAtivaId); }
     };
 
     window.abrirModalMover = () => {
       if(!isAdmin) return; const select = document.getElementById('selectMoveFolderParent'); select.innerHTML = '<option value="">Raiz</option>';
-      const proibidos = getIdsSubpastas(pastaAtivaId); [...pastas].sort((a,b) => a.nome.localeCompare(b.nome)).forEach(p => { if(!proibidos.includes(p.id)) select.innerHTML += `<option value="${p.id}">${p.nome}</option>`; });
+      const proibidos = getIdsSubpastas(pastaAtivaId); [...pastas].sort((a,b) => a.nome.localeCompare(b.nome)).forEach(p => { if(!proibidos.includes(String(p.id))) select.innerHTML += `<option value="${p.id}">${p.nome}</option>`; });
       document.getElementById('modalMover').classList.replace('hidden', 'flex');
     };
     window.fecharModalMover = () => document.getElementById('modalMover').classList.replace('flex', 'hidden');
     window.moverPasta = async () => {
       if(!isAdmin || !pastaAtivaId) return; const novo = document.getElementById('selectMoveFolderParent').value || null;
-      const pasta = pastas.find(p => p.id === pastaAtivaId); pasta.parentId = novo;
-      await setDoc(doc(db, "pastas", pasta.id), { nome: pasta.nome, parentId: pasta.parentId }); window.fecharModalMover(); renderFolders(); window.selectFolder(pastaAtivaId);
+      const pasta = pastas.find(p => String(p.id) === String(pastaAtivaId)); pasta.parentId = novo ? String(novo) : null;
+      await setDoc(doc(db, "pastas", String(pasta.id)), { nome: pasta.nome, parentId: pasta.parentId }); window.fecharModalMover(); renderFolders(); window.selectFolder(pastaAtivaId);
     };
 
     window.excluirPastaAtiva = async () => {
-      if(!isAdmin || !pastaAtivaId) return; const pIds = getIdsSubpastas(pastaAtivaId); const cont = conteudos_base.filter(c => pIds.includes(c.pastaId));
+      if(!isAdmin || !pastaAtivaId) return; const pIds = getIdsSubpastas(pastaAtivaId); const cont = conteudos_base.filter(c => pIds.includes(String(c.pastaId)));
       if(confirm(`Apagar pasta globalmente? Isso afeta todos os utilizadores.`)) { 
-        for(let c of cont) { await deleteDoc(doc(db, "conteudos", c.id)); }
-        for(let p of pIds) { await deleteDoc(doc(db, "pastas", p)); }
-        conteudos_base = conteudos_base.filter(c => !pIds.includes(c.pastaId)); pastas = pastas.filter(p => !pIds.includes(p.id)); 
+        for(let c of cont) { await deleteDoc(doc(db, "conteudos", String(c.id))); }
+        for(let p of pIds) { await deleteDoc(doc(db, "pastas", String(p))); }
+        conteudos_base = conteudos_base.filter(c => !pIds.includes(String(c.pastaId))); pastas = pastas.filter(p => !pIds.includes(String(p.id))); 
         pastaAtivaId = null; document.getElementById('inputBusca').value = ''; window.showDesempenho(); 
       }
     };
@@ -568,26 +657,59 @@
       if(!isAdmin) return alert("Modo administrador necessário.");
       const tipo = document.getElementById('inputType').value;
       
+      // IMPORTAÇÃO EM LOTE DENTRO DA PASTA (BLINDADA)
       if (tipo === 'lote' && !editandoId) {
         let jsonString = document.getElementById('inputJSON').value.trim(); if(!jsonString) return;
         try {
           jsonString = jsonString.replace(/```json/gi, '').replace(/```/g, '').replace(/[\u201C\u201D]/g, '"').replace(/[\u2018\u2019]/g, "'").replace(/\n/g, " ").replace(/\r/g, "").replace(/\t/g, " "); 
-          const dados = JSON.parse(jsonString.trim());
+          const parsed = JSON.parse(jsonString.trim());
+          const dados = Array.isArray(parsed) ? parsed : (parsed.conteudos || parsed.questoes || [parsed]);
+          let salvos = 0;
+
           for(let index=0; index<dados.length; index++) {
-            const item = dados[index]; const tempId = 'c_' + Date.now() + '_' + index;
-            if (item.tipo === 'flashcard' && item.frente && item.verso) { const obj = { pastaId: pastaAtivaId, tipo: 'flashcard', frente: item.frente, verso: item.verso, imagem: item.imagem || "" }; conteudos_base.push({ id: tempId, ...obj }); await setDoc(doc(db, "conteudos", tempId), obj); } 
-            else if (item.tipo === 'questao' && item.enunciado) { const obj = { pastaId: pastaAtivaId, tipo: 'questao', enunciado: item.enunciado, alternativas: item.alternativas, correta: parseInt(item.correta) || 0, comentario: item.comentario, imagem: item.imagem || "" }; conteudos_base.push({ id: tempId, ...obj }); await setDoc(doc(db, "conteudos", tempId), obj); }
+            const item = dados[index]; if (!item) continue;
+            const tempId = 'c_' + Date.now() + '_' + index;
+            const pastaAlvo = String(pastaAtivaId);
+            const itemTipo = item.tipo || (item.enunciado ? 'questao' : 'flashcard');
+
+            if (itemTipo === 'flashcard' && (item.frente || item.verso)) { 
+              const obj = { 
+                pastaId: pastaAlvo, 
+                tipo: 'flashcard', 
+                frente: String(item.frente || "Sem pergunta"), 
+                verso: String(item.verso || "Sem resposta"), 
+                imagem: item.imagem ? String(item.imagem) : "" 
+              }; 
+              conteudos_base.push({ id: tempId, ...obj }); 
+              await setDoc(doc(db, "conteudos", tempId), obj); 
+              salvos++;
+            } 
+            else if (itemTipo === 'questao' && item.enunciado) { 
+              const obj = { 
+                pastaId: pastaAlvo, 
+                tipo: 'questao', 
+                enunciado: String(item.enunciado), 
+                alternativas: Array.isArray(item.alternativas) ? item.alternativas.map(a => String(a || "")) : ["A", "B", "C", "D", "E"], 
+                correta: (item.correta !== undefined && item.correta !== null) ? parseInt(item.correta) || 0 : 0, 
+                comentario: item.comentario ? String(item.comentario) : "", 
+                imagem: item.imagem ? String(item.imagem) : "" 
+              }; 
+              conteudos_base.push({ id: tempId, ...obj }); 
+              await setDoc(doc(db, "conteudos", tempId), obj); 
+              salvos++;
+            }
           }
-          window.closeContentModal(); window.selectFolder(pastaAtivaId); alert("Lote guardado na nuvem!"); return;
+          window.closeContentModal(); window.selectFolder(pastaAtivaId); alert(`Lote guardado na nuvem! (${salvos} itens adicionados)`); return;
         } catch(e) { return alert("Erro no JSON: " + e.message); }
       }
 
-      let obj = { pastaId: pastaAtivaId || conteudos_base.find(c=>c.id===editandoId).pastaId, tipo: tipo, imagem: document.getElementById('inputImagem').value.trim() };
+      const pastaAlvo = String(pastaAtivaId || conteudos_base.find(c=>String(c.id)===String(editandoId)).pastaId);
+      let obj = { pastaId: pastaAlvo, tipo: tipo, imagem: document.getElementById('inputImagem').value.trim() };
       if (tipo === 'flashcard') { obj.frente = document.getElementById('inputFrente').value.trim(); obj.verso = document.getElementById('inputVerso').value.trim(); } 
-      else if (tipo === 'questao') { obj.enunciado = document.getElementById('inputEnunciado').value.trim(); obj.comentario = document.getElementById('inputComentario').value.trim(); obj.correta = parseInt(document.getElementById('inputCorreta').value); obj.alternativas = [ document.getElementById('alt0').value.trim(), document.getElementById('alt1').value.trim(), document.getElementById('alt2').value.trim(), document.getElementById('alt3').value.trim(), document.getElementById('alt4').value.trim() ]; }
+      else if (tipo === 'questao') { obj.enunciado = document.getElementById('inputEnunciado').value.trim(); obj.comentario = document.getElementById('inputComentario').value.trim(); obj.correta = parseInt(document.getElementById('inputCorreta').value) || 0; obj.alternativas = [ document.getElementById('alt0').value.trim(), document.getElementById('alt1').value.trim(), document.getElementById('alt2').value.trim(), document.getElementById('alt3').value.trim(), document.getElementById('alt4').value.trim() ]; }
 
-      const finalId = editandoId || ('c_' + Date.now());
-      if(editandoId) { const idx = conteudos_base.findIndex(c=>c.id===finalId); if(idx>-1) conteudos_base[idx] = {id: finalId, ...obj}; } 
+      const finalId = String(editandoId || ('c_' + Date.now()));
+      if(editandoId) { const idx = conteudos_base.findIndex(c=>String(c.id)===finalId); if(idx>-1) conteudos_base[idx] = {id: finalId, ...obj}; } 
       else { conteudos_base.push({id: finalId, ...obj}); }
       
       await setDoc(doc(db, "conteudos", finalId), obj);
@@ -598,22 +720,28 @@
     };
 
     window.editarConteudo = (id) => {
-      if(!isAdmin) return; const item = conteudos_base.find(c => c.id === id); if (!item) return; editandoId = id; 
+      if(!isAdmin) return; const item = conteudos_base.find(c => String(c.id) === String(id)); if (!item) return; editandoId = String(id); 
       document.getElementById('modalContentTitle').textContent = 'Editar na Nuvem'; document.getElementById('inputType').value = item.tipo; document.getElementById('inputType').disabled = true; document.getElementById('inputImagem').value = item.imagem || ''; window.toggleContentForm();
-      if (item.tipo === 'flashcard') { document.getElementById('inputFrente').value = item.frente; document.getElementById('inputVerso').value = item.verso; } 
-      else if (item.tipo === 'questao') { document.getElementById('inputEnunciado').value = item.enunciado; document.getElementById('inputComentario').value = item.comentario; document.getElementById('inputCorreta').value = item.correta; item.alternativas.forEach((alt, i) => { document.getElementById('alt' + i).value = alt; }); }
+      if (item.tipo === 'flashcard') { document.getElementById('inputFrente').value = item.frente || ''; document.getElementById('inputVerso').value = item.verso || ''; } 
+      else if (item.tipo === 'questao') { document.getElementById('inputEnunciado').value = item.enunciado || ''; document.getElementById('inputComentario').value = item.comentario || ''; document.getElementById('inputCorreta').value = item.correta || 0; (item.alternativas || []).forEach((alt, i) => { if(document.getElementById('alt' + i)) document.getElementById('alt' + i).value = alt; }); }
       document.getElementById('modalContent').classList.replace('hidden', 'flex');
     };
 
     window.deletarConteudo = async (id) => {
-      if(!isAdmin) return; if(confirm("Apagar da nuvem para TODOS os utilizadores?")) {
-        conteudos_base = conteudos_base.filter(c => c.id !== id); await deleteDoc(doc(db, "conteudos", id)); 
+      if(!isAdmin) return; const idStr = String(id);
+      if(confirm("Apagar da nuvem para TODOS os utilizadores?")) {
+        conteudos_base = conteudos_base.filter(c => String(c.id) !== idStr); await deleteDoc(doc(db, "conteudos", idStr)); 
         if (document.getElementById('view-pesquisa').classList.contains('flex')) { window.buscarConteudo(); } 
         else if (pastaAtivaId) { window.selectFolder(pastaAtivaId); }
       }
     };
 
-    function getIdsSubpastas(folderId) { let ids = [folderId]; pastas.filter(p => p.parentId === folderId).forEach(f => ids = ids.concat(getIdsSubpastas(f.id))); return ids; }
+    function getIdsSubpastas(folderId) { 
+      const targetStr = String(folderId);
+      let ids = [targetStr]; 
+      pastas.filter(p => String(p.parentId) === targetStr).forEach(f => ids = ids.concat(getIdsSubpastas(f.id))); 
+      return ids; 
+    }
     
     window.toggleSidebar = (forceCollapse = false) => {
       const sidebar = document.getElementById('sidebar'); const icon = document.getElementById('collapseIcon'); const lupaBotao = document.getElementById('btnBuscaColapsado');
@@ -623,23 +751,28 @@
       renderFolders();
     };
     
-    window.togglePastaExpandida = (event, id) => { event.stopPropagation(); if(pastasFechadas.has(id)) pastasFechadas.delete(id); else pastasFechadas.add(id); renderFolders(); };
+    window.togglePastaExpandida = (event, id) => { event.stopPropagation(); const idStr = String(id); if(pastasFechadas.has(idStr)) pastasFechadas.delete(idStr); else pastasFechadas.add(idStr); renderFolders(); };
 
     function renderFolders() {
       const container = document.getElementById('folderTreeContainer'); container.innerHTML = '';
       function buildTree(parentId, depth = 0) {
-        const children = pastas.filter(p => p.parentId === parentId).sort((a, b) => a.nome.localeCompare(b.nome));
+        const children = pastas.filter(p => (parentId === null ? !p.parentId : String(p.parentId) === String(parentId))).sort((a, b) => a.nome.localeCompare(b.nome));
         children.forEach(folder => {
-          const isSelected = pastaAtivaId === folder.id; const totalItens = conteudos_base.filter(c => getIdsSubpastas(folder.id).includes(c.pastaId)).length;
-          const paddingLeft = sidebarCollapsed ? 0 : (depth * 16) + 8; const hasChildren = pastas.some(p => p.parentId === folder.id); const isClosed = pastasFechadas.has(folder.id);
+          const folderIdStr = String(folder.id);
+          const isSelected = String(pastaAtivaId) === folderIdStr; 
+          const subIds = getIdsSubpastas(folderIdStr);
+          const totalItens = conteudos_base.filter(c => subIds.includes(String(c.pastaId))).length;
+          const paddingLeft = sidebarCollapsed ? 0 : (depth * 16) + 8; 
+          const hasChildren = pastas.some(p => String(p.parentId) === folderIdStr); 
+          const isClosed = pastasFechadas.has(folderIdStr);
           const div = document.createElement('div');
           div.className = `group flex items-center justify-between w-full py-2 rounded-lg text-sm cursor-pointer transition-colors mb-1 center-on-collapse ${sidebarCollapsed ? 'justify-center' : 'pr-3'} ${isSelected ? 'bg-indigo-500/10 text-indigo-400 font-medium border border-indigo-500/20' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-transparent'}`;
-          if (!sidebarCollapsed) div.style.paddingLeft = `${paddingLeft}px`; div.onclick = () => window.selectFolder(folder.id);
+          if (!sidebarCollapsed) div.style.paddingLeft = `${paddingLeft}px`; div.onclick = () => window.selectFolder(folderIdStr);
           let chevronHtml = '';
-          if(hasChildren && !sidebarCollapsed) chevronHtml = `<button onclick="window.togglePastaExpandida(event, '${folder.id}')" class="p-1 text-slate-500 hover:text-slate-300 transition-transform ${isClosed ? '-rotate-90' : ''}"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></button>`;
+          if(hasChildren && !sidebarCollapsed) chevronHtml = `<button onclick="window.togglePastaExpandida(event, '${folderIdStr}')" class="p-1 text-slate-500 hover:text-slate-300 transition-transform ${isClosed ? '-rotate-90' : ''}"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></button>`;
           else if (!sidebarCollapsed) chevronHtml = `<span class="w-6 h-6 inline-block shrink-0"></span>`; 
           div.innerHTML = `<div class="flex items-center gap-1 truncate">${chevronHtml}<span class="shrink-0 ${isSelected ? 'text-indigo-400' : 'text-slate-500'} hide-on-collapse"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${depth > 0 ? 'M9 5l7 7-7 7' : 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z'}"></path></svg></span><span class="hide-on-collapse truncate ml-1">${folder.nome}</span></div><span class="hide-on-collapse text-[10px] font-bold ${isSelected ? 'bg-indigo-500/20 text-indigo-300' : 'bg-slate-800 text-slate-500 group-hover:bg-slate-700'} px-2 py-0.5 rounded-full">${totalItens}</span>`;
-          container.appendChild(div); if (hasChildren && (!isClosed || sidebarCollapsed)) buildTree(folder.id, depth + 1);
+          container.appendChild(div); if (hasChildren && (!isClosed || sidebarCollapsed)) buildTree(folderIdStr, depth + 1);
         });
       }
       buildTree(null, 0);
@@ -651,19 +784,20 @@
     window.showConfig = () => { pastaAtivaId = null; document.getElementById('inputBusca').value = ''; renderFolders(); resetSidebarButtons(); document.getElementById('btnConfig').className = "w-full flex items-center gap-3 p-2 rounded-lg transition-colors bg-indigo-500/10 text-indigo-400 font-medium border border-indigo-500/20 center-on-collapse"; ['view-dashboard', 'view-study', 'view-desempenho', 'view-pesquisa'].forEach(v => document.getElementById(v).classList.replace('flex', 'hidden')); document.getElementById('view-config').classList.replace('hidden', 'flex'); };
 
     window.selectFolder = (id) => {
-      pastaAtivaId = id; document.getElementById('inputBusca').value = ''; resetSidebarButtons(); renderFolders();
-      const pIds = getIdsSubpastas(id); const merged = conteudos_base.map(getMergedCard).filter(c => pIds.includes(c.pastaId));
+      pastaAtivaId = String(id); document.getElementById('inputBusca').value = ''; resetSidebarButtons(); renderFolders();
+      const pIds = getIdsSubpastas(pastaAtivaId); const merged = conteudos_base.map(getMergedCard).filter(c => pIds.includes(String(c.pastaId)));
       
       const pendQ = merged.filter(c => c.tipo === 'questao' && isCardDue(c)).length;
       const pendF = merged.filter(c => c.tipo === 'flashcard' && isCardDue(c)).length;
       
-      document.getElementById('dashFolderTitle').textContent = pastas.find(p => p.id === id).nome;
+      const pastaObj = pastas.find(p => String(p.id) === pastaAtivaId);
+      document.getElementById('dashFolderTitle').textContent = pastaObj ? pastaObj.nome : "Pasta";
       document.getElementById('dashCountQuestoes').textContent = pendQ; document.getElementById('dashCountFlashcards').textContent = pendF;
       document.getElementById('badgeQuestao').className = pendQ > 0 ? "mt-4 bg-indigo-500/10 text-indigo-400 px-4 py-1.5 rounded-full text-sm font-bold border border-indigo-500/30" : "mt-4 bg-slate-500/10 text-slate-400 px-4 py-1.5 rounded-full text-sm font-medium border border-slate-500/20"; 
       document.getElementById('badgeFlashcard').className = pendF > 0 ? "mt-4 bg-cyan-500/10 text-cyan-400 px-4 py-1.5 rounded-full text-sm font-bold border border-cyan-500/30" : "mt-4 bg-slate-500/10 text-slate-400 px-4 py-1.5 rounded-full text-sm font-medium border border-slate-500/20"; 
 
       const cont = document.getElementById('listaConteudoPasta'); cont.innerHTML = '';
-      const dirItens = merged.filter(c => c.pastaId === id);
+      const dirItens = merged.filter(c => String(c.pastaId) === pastaAtivaId);
       document.getElementById('dashManageCount').textContent = `${dirItens.length} itens`;
       if (dirItens.length === 0) cont.innerHTML = '<p class="text-sm text-slate-500 py-4 text-center">Vazio.</p>';
       dirItens.forEach(item => {
@@ -676,7 +810,7 @@
     };
 
     window.resetarPasta = async () => {
-      if(!pastaAtivaId) return; const pIds = getIdsSubpastas(pastaAtivaId); const m = conteudos_base.filter(c => pIds.includes(c.pastaId));
+      if(!pastaAtivaId) return; const pIds = getIdsSubpastas(pastaAtivaId); const m = conteudos_base.filter(c => pIds.includes(String(c.pastaId)));
       if(m.length === 0) return;
       if(confirm("Apagar as revisões futuras (pessoais) desta pasta?")) {
         for(let c of m) { await salvarRevisaoNuvem(c.id, null); }
@@ -685,7 +819,7 @@
     };
 
     window.startStudyMode = (tipo) => {
-      const pIds = getIdsSubpastas(pastaAtivaId); filaEstudo = conteudos_base.map(getMergedCard).filter(c => c.tipo === tipo && pIds.includes(c.pastaId) && isCardDue(c));
+      const pIds = getIdsSubpastas(pastaAtivaId); filaEstudo = conteudos_base.map(getMergedCard).filter(c => c.tipo === tipo && pIds.includes(String(c.pastaId)) && isCardDue(c));
       if(filaEstudo.length === 0) return alert('Não há cartões pendentes hoje.');
       filaEstudo.sort(() => Math.random() - 0.5); document.getElementById('sidebar').style.display = 'none'; document.getElementById('view-dashboard').classList.replace('flex', 'hidden'); document.getElementById('view-study').classList.replace('hidden', 'flex'); renderProxItem();
     };
@@ -701,13 +835,13 @@
       const c = document.getElementById('studyContentArea'); const f = document.getElementById('studyFeedbackBar'); interfaceRespondida = false; f.classList.replace('flex', 'hidden'); 
       if (filaEstudo.length === 0) { c.innerHTML = `<div class="text-center bg-slate-800/40 p-12 rounded-3xl max-w-lg mx-auto mt-10"><div class="text-6xl mb-6">🧠</div><h2 class="text-3xl font-bold text-white mb-3">Concluído!</h2><button onclick="window.exitStudyMode()" class="px-8 py-3 bg-indigo-600 text-white font-bold rounded-xl mt-4">Voltar</button></div>`; return; }
       itemAtual = filaEstudo.shift(); const iT = itemAtual.imagem ? `<img src="${itemAtual.imagem}" class="w-full max-h-48 object-contain rounded-lg mb-6 bg-black/30 p-2">` : '';
-      if (itemAtual.tipo === 'questao') { let ah = ''; itemAtual.alternativas.forEach((a, i) => ah += `<button id="alt-${i}" onclick="window.responderQuestao(${i})" class="w-full text-left p-4 rounded-xl border border-slate-700/80 bg-slate-800/40 text-slate-300 mb-3">${a}</button>`); c.innerHTML = `<div class="flex-1 flex flex-col justify-center w-full"><div id="qC" class="bg-slate-900/50 border border-slate-700/50 p-6 md:p-12 rounded-3xl w-full my-auto">${iT}<h3 class="text-lg text-slate-100 font-medium mb-6">${itemAtual.enunciado}</h3><div>${ah}</div><div id="cBox" class="hidden mt-6 p-6 rounded-2xl bg-indigo-500/5 border border-indigo-500/30"><p class="text-sm text-slate-300">${itemAtual.comentario}</p></div></div></div><div class="h-36 w-full shrink-0"></div>`; } 
+      if (itemAtual.tipo === 'questao') { let ah = ''; (itemAtual.alternativas || []).forEach((a, i) => ah += `<button id="alt-${i}" onclick="window.responderQuestao(${i})" class="w-full text-left p-4 rounded-xl border border-slate-700/80 bg-slate-800/40 text-slate-300 mb-3">${a}</button>`); c.innerHTML = `<div class="flex-1 flex flex-col justify-center w-full"><div id="qC" class="bg-slate-900/50 border border-slate-700/50 p-6 md:p-12 rounded-3xl w-full my-auto">${iT}<h3 class="text-lg text-slate-100 font-medium mb-6">${itemAtual.enunciado}</h3><div>${ah}</div><div id="cBox" class="hidden mt-6 p-6 rounded-2xl bg-indigo-500/5 border border-indigo-500/30"><p class="text-sm text-slate-300">${itemAtual.comentario || ''}</p></div></div></div><div class="h-36 w-full shrink-0"></div>`; } 
       else { c.innerHTML = `<div class="flex-1 flex flex-col justify-center w-full"><div class="perspective w-full min-h-[450px] cursor-pointer my-auto" onclick="window.flipCard()"><div id="sC" class="relative w-full h-full transform-style-3d transition-transform duration-700 rounded-3xl"><div class="absolute inset-0 backface-hidden bg-slate-800 border border-slate-700/80 rounded-3xl p-8 flex flex-col justify-center items-center text-center">${iT}<p class="text-2xl text-slate-100">${itemAtual.frente}</p></div><div class="absolute inset-0 backface-hidden rotate-y-180 bg-slate-800 border border-indigo-500/50 rounded-3xl p-8 flex flex-col items-center text-center"><p class="text-xl text-white my-auto">${itemAtual.verso}</p><button onclick="event.stopPropagation(); document.getElementById('sC').classList.remove('rotate-y-180');" class="mt-4 px-5 py-3 bg-slate-700/50 rounded-xl text-slate-300 text-sm">↻ Voltar Pergunta</button></div></div></div></div><div class="h-36 w-full shrink-0"></div>`; }
     }
 
     window.responderQuestao = (iSel) => {
-      if (interfaceRespondida) return; interfaceRespondida = true; const a = (iSel === itemAtual.correta);
-      document.querySelectorAll('#qC button').forEach((b, i) => { b.disabled = true; if (i === itemAtual.correta) b.classList.add('bg-emerald-500/10', 'text-emerald-400'); else if (i === iSel && !a) b.classList.add('bg-rose-500/10', 'text-rose-400'); else b.classList.add('opacity-30'); });
+      if (interfaceRespondida) return; interfaceRespondida = true; const a = (iSel === Number(itemAtual.correta));
+      document.querySelectorAll('#qC button').forEach((b, i) => { b.disabled = true; if (i === Number(itemAtual.correta)) b.classList.add('bg-emerald-500/10', 'text-emerald-400'); else if (i === iSel && !a) b.classList.add('bg-rose-500/10', 'text-rose-400'); else b.classList.add('opacity-30'); });
       document.getElementById('qC').classList.add('ring-2', a ? 'ring-emerald-500' : 'ring-rose-500'); if(!a) document.getElementById('qC').classList.add('shake');
       document.getElementById('cBox').classList.remove('hidden'); renderFeedbackBar('questao', a);
     };
